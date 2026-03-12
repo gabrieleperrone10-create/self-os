@@ -1,26 +1,346 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
+/* SELF OS — Design System */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-gold: var(--gold);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  /* Block colors */
+  --color-stato: var(--stato);
+  --color-pattern: var(--pattern);
+  --color-credenze: var(--credenze);
+  --color-identita: var(--identita);
+
+  --font-display: Georgia, 'Times New Roman', serif;
+  --font-body: Georgia, serif;
+  --font-mono: 'Courier New', monospace;
+
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* SELF OS — Single theme (dark only) */
+:root {
+  --radius: 4px;
+
+  /* Core palette */
+  --background:       #0A0806;
+  --surface:          #120F0A;
+  --border:           #1E1812;
+  --text-primary:     #F5F0E8;
+  --text-secondary:   #A89880;
+  --text-muted:       #4A4035;
+  --gold:             #C9A96E;
+
+  /* Block colors */
+  --stato:            #C9A96E;
+  --pattern:          #8B9E7A;
+  --credenze:         #7A8B9E;
+  --identita:         #9E7A8B;
+
+  /* Mapped to shadcn tokens */
+  --foreground:           var(--text-primary);
+  --card:                 var(--surface);
+  --card-foreground:      var(--text-primary);
+  --popover:              var(--surface);
+  --popover-foreground:   var(--text-primary);
+  --primary:              var(--gold);
+  --primary-foreground:   var(--background);
+  --secondary:            var(--surface);
+  --secondary-foreground: var(--text-primary);
+  --muted:                var(--border);
+  --muted-foreground:     var(--text-secondary);
+  --accent:               var(--surface);
+  --accent-foreground:    var(--gold);
+  --destructive:          #B45454;
+  --input:                var(--border);
+  --ring:                 var(--gold);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    box-sizing: border-box;
+  }
+
+  html {
+    /* Force dark always */
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--text-primary);
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-weight: normal;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Entrance animations — slow and ritual */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.6s ease forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+/* Staggered children */
+.animate-stagger > * {
+  opacity: 0;
+  animation: fadeUp 0.6s ease forwards;
+}
+.animate-stagger > *:nth-child(1) { animation-delay: 0.1s; }
+.animate-stagger > *:nth-child(2) { animation-delay: 0.25s; }
+.animate-stagger > *:nth-child(3) { animation-delay: 0.4s; }
+.animate-stagger > *:nth-child(4) { animation-delay: 0.55s; }
+.animate-stagger > *:nth-child(5) { animation-delay: 0.7s; }
+
+@keyframes micPulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(201,169,110,0.12), 0 0 0 8px rgba(201,169,110,0.06); }
+  50%       { box-shadow: 0 0 0 8px rgba(201,169,110,0.18), 0 0 0 16px rgba(201,169,110,0.08); }
+}
+
+/* ─── Mobile Optimization ──────────────────────────────────── */
+
+button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* App layout — responsive sidebar */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--background);
+}
+
+.app-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.app-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 3rem 3.5rem;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  /* Sidebar — slide in from left */
+  .app-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100dvh;
+    z-index: 100;
+    transform: translateX(-100%);
+    overflow-y: auto;
+  }
+
+  .app-sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* Overlay behind open sidebar */
+  .app-sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    z-index: 99;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+
+  .app-sidebar-overlay.open {
+    display: block;
+  }
+
+  /* Main content — extra bottom padding for nav bar */
+  .app-main {
+    padding: 4rem 1.25rem 6rem;
+  }
+
+  /* Hamburger button — top left */
+  .mobile-menu-btn {
+    display: flex !important;
+  }
+
+  /* Mobile nav bar — fixed bottom */
+  .mobile-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    z-index: 90;
+    /* Safe area for iPhone home indicator */
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-nav {
+    display: none;
+  }
+
+  .mobile-menu-btn {
+    display: none !important;
+  }
+}
+
+/* Responsive typography */
+@media (max-width: 480px) {
+  body {
+    font-size: 15px;
+    -webkit-text-size-adjust: 100%;
+  }
+}
+
+/* Prevent iOS zoom on input focus */
+@media (max-width: 768px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
+/* ─── UI Polish ────────────────────────────────────────────── */
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Better focus ring */
+:focus-visible {
+  outline: 1px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* Range input styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 2px;
+  min-height: unset;
+  background: var(--border);
+  border-radius: 1px;
+  cursor: pointer;
+  padding: 0;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--gold);
+  cursor: pointer;
+  border: 2px solid var(--background);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--gold);
+  cursor: pointer;
+  border: 2px solid var(--background);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Selection color */
+::selection {
+  background: rgba(201,169,110,0.2);
+  color: var(--text-primary);
+}
+
+/* Hover utility classes — usate nei Server Components al posto di onMouseEnter/onMouseLeave */
+.btn-gold-hover:hover {
+  background: var(--gold) !important;
+  color: var(--background) !important;
+}
+
+.card-hover:hover {
+  border-color: var(--gold) !important;
 }

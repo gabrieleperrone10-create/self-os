@@ -34,6 +34,14 @@ export default async function ScanResultsPage() {
 
   if (!scan?.analysis) redirect('/scan');
 
+  // Detect old scan format (pre-redesign: had shadow_pattern instead of archetype_primary)
+  const analysisRaw = scan.analysis as Record<string, unknown>;
+  if (!analysisRaw.archetype_primary) {
+    // Delete the incompatible scan so the user can retake it
+    await supabase.from('scans').delete().eq('id', scan.id);
+    redirect('/scan');
+  }
+
   const report = scan.analysis as unknown as ScanReport;
   const answers = (scan.answers ?? {}) as Record<string, unknown>;
   const radarScores = extractRadarScores(answers);

@@ -17,6 +17,8 @@ function timeAgo(dateStr: string): string {
 // Stato non più richiesto in fase di cattura — registrato a un valore neutro fisso
 const DEFAULT_STATE_SCORE = 5;
 
+const MAX_CONTENT_LENGTH = 1000;
+
 function stateColor(score: number): string {
   if (score >= 7) return 'var(--pattern)';
   if (score >= 4) return 'var(--gold)';
@@ -129,7 +131,7 @@ export default function SegnaliPage() {
     }
   }
 
-  const charsLeft = 300 - content.length;
+  const charsLeft = MAX_CONTENT_LENGTH - content.length;
 
   return (
     <div style={{ maxWidth: '620px' }}>
@@ -156,7 +158,7 @@ export default function SegnaliPage() {
           value={content}
           onChange={e => setContent(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit(); }}
-          maxLength={300}
+          maxLength={MAX_CONTENT_LENGTH}
           rows={4}
           placeholder="Cosa hai notato?"
           style={{

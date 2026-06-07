@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     const body = await request.json() as { content: string; state_score: number };
     const { content, state_score } = body;
 
-    if (!content?.trim() || content.length > 300) {
+    if (!content?.trim() || content.length > 1000) {
       return NextResponse.json({ error: 'Contenuto non valido' }, { status: 400 });
     }
     if (!state_score || state_score < 1 || state_score > 10) {

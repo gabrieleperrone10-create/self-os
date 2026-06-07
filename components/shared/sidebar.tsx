@@ -15,6 +15,7 @@ import {
   ScanLine,
   LogOut,
   BookOpen,
+  Zap,
   Menu,
   X,
 } from 'lucide-react';
@@ -25,6 +26,7 @@ const mainNav = [
   { href: '/checkin',      label: 'Check-in',      icon: CalendarCheck },
   { href: '/identity-map', label: 'Identity Map',  icon: Map },
   { href: '/mirror',       label: 'Mirror',        icon: GitFork },
+  { href: '/segnali',      label: 'Segnali',       icon: Zap },
   { href: '/letters',      label: 'Lettere',       icon: BookOpen },
 ];
 
@@ -33,7 +35,7 @@ const mobileBottomNav = [
   { href: '/checkin',      label: 'Check-in', icon: CalendarCheck },
   { href: '/identity-map', label: 'Mappa',    icon: Map },
   { href: '/mirror',       label: 'Mirror',   icon: GitFork },
-  { href: '/letters',      label: 'Lettere',  icon: BookOpen },
+  { href: '/segnali',      label: 'Segnali',  icon: Zap },
 ];
 
 export function Sidebar() {

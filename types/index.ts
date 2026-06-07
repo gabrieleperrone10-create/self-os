@@ -7,6 +7,16 @@ export type PatternType = 'shadow' | 'expansion' | 'belief' | 'state';
 export type DecisionOrigin = 'fear' | 'vision' | 'unclear';
 export type CoachClientStatus = 'active' | 'paused' | 'ended';
 
+export interface Signal {
+  id: string;
+  user_id: string;
+  content: string;
+  state_score: number;
+  ai_analysis: string | null;
+  pattern_id: string | null;
+  created_at: string;
+}
+
 export interface Profile {
   id: string;
   email: string | null;

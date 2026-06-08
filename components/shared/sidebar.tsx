@@ -15,6 +15,7 @@ import {
   ScanLine,
   LogOut,
   BookOpen,
+  FlaskConical,
   Zap,
   Menu,
   X,
@@ -26,6 +27,7 @@ const mainNav = [
   { href: '/checkin',      label: 'Check-in',      icon: CalendarCheck },
   { href: '/identity-map', label: 'Identity Map',  icon: Map },
   { href: '/mirror',       label: 'Mirror',        icon: GitFork },
+  { href: '/lab',          label: 'Lab',           icon: FlaskConical },
   { href: '/segnali',      label: 'Segnali',       icon: Zap },
   { href: '/letters',      label: 'Lettere',       icon: BookOpen },
 ];
@@ -33,8 +35,8 @@ const mainNav = [
 const mobileBottomNav = [
   { href: '/dashboard',    label: 'Home',     icon: LayoutDashboard },
   { href: '/checkin',      label: 'Check-in', icon: CalendarCheck },
-  { href: '/identity-map', label: 'Mappa',    icon: Map },
   { href: '/mirror',       label: 'Mirror',   icon: GitFork },
+  { href: '/lab',          label: 'Lab',      icon: FlaskConical },
   { href: '/segnali',      label: 'Segnali',  icon: Zap },
 ];
 

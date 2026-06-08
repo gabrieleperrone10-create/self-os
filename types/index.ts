@@ -6,6 +6,9 @@ export type CheckinType = 'morning' | 'evening';
 export type PatternType = 'shadow' | 'expansion' | 'belief' | 'state';
 export type DecisionOrigin = 'fear' | 'vision' | 'unclear';
 export type CoachClientStatus = 'active' | 'paused' | 'ended';
+export type ExperimentStatus = 'active' | 'paused' | 'completed' | 'stuck';
+export type ExperimentResolution = 'integrated' | 'behavioral_shift' | 'no_change';
+export type ExperimentResponse = 'acted_differently' | 'noticed_during' | 'noticed_after' | 'automatic';
 
 export interface Signal {
   id: string;
@@ -143,4 +146,67 @@ export interface PatternRecognitionResult {
     trigger: string;
   }>;
   weekly_insight: string;
+}
+
+export interface Experiment {
+  id: string;
+  user_id: string;
+  pattern_id: string | null;
+  pattern_title: string;
+  pattern_description: string | null;
+  triggers: string[];
+  emotion_sensation: string;
+  automatic_action: string;
+  identity_confirmation: string;
+  body_discharge_name: string;
+  body_discharge_instruction: string;
+  body_discharge_duration: string;
+  different_action: string;
+  different_action_when: string;
+  ai_rationale: string | null;
+  status: ExperimentStatus;
+  resolution: ExperimentResolution | null;
+  started_at: string;
+  duration_days: number;
+  ends_at: string | null;
+  last_review: string | null;
+  last_review_at: string | null;
+  created_at: string;
+}
+
+export interface ExperimentEntry {
+  id: string;
+  experiment_id: string;
+  user_id: string;
+  checkin_id: string | null;
+  emerged: boolean;
+  response: ExperimentResponse | null;
+  note: string | null;
+  date: string;
+  created_at: string;
+}
+
+export interface ExperimentGeneration {
+  loop_map: {
+    triggers: string[];
+    emotion_sensation: string;
+    automatic_action: string;
+    identity_confirmation: string;
+  };
+  intervention: {
+    body_discharge: {
+      name: string;
+      instruction: string;
+      duration: string;
+    };
+    different_action: {
+      instruction: string;
+      when: string;
+    };
+  };
+  meta: {
+    pattern_title: string;
+    ai_rationale: string;
+    duration_days: number;
+  };
 }

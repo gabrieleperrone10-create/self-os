@@ -120,15 +120,15 @@ const EVENING_QUESTIONS: Question[] = [
     id: 'chiusura',
     type: 'text',
     label: 'Chiusura',
-    text: 'Cosa vuoi lasciare qui — senza portarlo nel sonno?',
-    placeholder: 'Deposita qui quello che non ti serve stanotte...',
+    text: 'Cosa non hai finito oggi — lo lasci qui per scelta o ci ricaschi domani senza averlo scelto?',
+    placeholder: 'Distingui: ho scelto di lasciarlo aperto, oppure mi è scivolato via...',
     maxChars: 400,
   },
 ];
 
 // ─── Component ────────────────────────────────────────────────
 
-type Step = 'type-select' | 'q' | 'submitting' | 'insight';
+type Step = 'type-select' | 'q' | 'submitting' | 'insight' | 'lab';
 
 export default function CheckinPage() {
   const supabase = createClient();
@@ -143,6 +143,8 @@ export default function CheckinPage() {
   const [alreadyDone, setAlreadyDone] = useState(false);
   const [slideDir, setSlideDir] = useState<'in' | 'out'>('in');
   const textRef = useRef<HTMLTextAreaElement>(null);
+  const [activeExperiments, setActiveExperiments] = useState<Array<{ id: string; pattern_title: string; triggers: string[]; different_action: string; trackedToday: boolean }>>([]);
+  const [labStep, setLabStep] = useState(0);
 
   const questions = checkinType === 'morning' ? MORNING_QUESTIONS : EVENING_QUESTIONS;
   const typeLabel = checkinType === 'morning' ? 'Mattina' : 'Sera';
@@ -167,9 +169,10 @@ export default function CheckinPage() {
     check();
   }, [checkinType, supabase]);
 
-  // Auto-focus textarea when question changes
+  // Auto-focus textarea only on desktop (on mobile keyboard hides the submit button)
   useEffect(() => {
-    if (step === 'q' && currentQuestion?.type === 'text') {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (!isMobile && step === 'q' && currentQuestion?.type === 'text') {
       setTimeout(() => textRef.current?.focus(), 450);
     }
   }, [step, currentQ, currentQuestion?.type]);
@@ -249,13 +252,36 @@ export default function CheckinPage() {
 
       if (insertError) throw insertError;
 
-      const res = await fetch('/api/ai/daily-insight', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ checkinId: checkin.id }),
-      });
-      const data = await res.json() as { insight?: string };
-      setInsight(data.insight ?? null);
+      const [insightRes, experimentsRes] = await Promise.all([
+        fetch('/api/ai/daily-insight', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ checkinId: checkin.id }),
+        }),
+        fetch('/api/experiments'),
+      ]);
+
+      const insightData = await insightRes.json() as { insight?: string };
+      setInsight(insightData.insight ?? null);
+
+      // Load active experiments for lab micro-tracking
+      if (experimentsRes.ok) {
+        const expData = await experimentsRes.json() as { experiments?: Array<{ id: string; pattern_title: string; triggers: string[]; different_action: string; status: string }> };
+        const today = new Date().toISOString().split('T')[0];
+        const active = (expData.experiments ?? []).filter(e => e.status === 'active');
+
+        // Check which ones are already tracked today
+        const tracked = await Promise.all(
+          active.map(async e => {
+            const r = await fetch(`/api/experiments/${e.id}/entries`);
+            const d = await r.json() as { entries?: Array<{ date: string }> };
+            const trackedToday = (d.entries ?? []).some(en => en.date === today);
+            return { ...e, trackedToday };
+          })
+        );
+        setActiveExperiments(tracked);
+      }
+
       setStep('insight');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore');
@@ -419,7 +445,7 @@ export default function CheckinPage() {
 
             {/* TEXT */}
             {currentQuestion.type === 'text' && (
-              <div>
+              <div style={{ paddingBottom: '6rem' }}>
                 <textarea
                   ref={textRef}
                   value={(currentAnswer as string) ?? ''}
@@ -483,6 +509,15 @@ export default function CheckinPage() {
               </p>
             </div>
 
+            {activeExperiments.filter(e => !e.trackedToday).length > 0 && (
+              <button
+                onClick={() => { setLabStep(0); transition(() => setStep('lab')); }}
+                style={{ ...outlineBtn, borderColor: 'rgba(201,169,110,0.4)', marginBottom: '1rem', display: 'block', width: 'fit-content' }}
+              >
+                Traccia il Lab ({activeExperiments.filter(e => !e.trackedToday).length}) →
+              </button>
+            )}
+
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
               <a href="/dashboard" style={outlineBtn}>Dashboard →</a>
               {checkinType === 'morning' && (
@@ -503,7 +538,103 @@ export default function CheckinPage() {
             </div>
           </div>
         )}
+
+        {/* LAB MICRO-TRACKING */}
+        {step === 'lab' && (() => {
+          const untracked = activeExperiments.filter(e => !e.trackedToday);
+          const exp = untracked[labStep];
+          if (!exp) return (
+            <div>
+              <p style={label('var(--pattern)')}>Lab</p>
+              <h2 style={{ ...heading, marginBottom: '1.5rem' }}>Tutto tracciato.</h2>
+              <a href="/dashboard" style={outlineBtn}>Dashboard →</a>
+            </div>
+          );
+          return (
+            <LabMicroTracker
+              key={exp.id}
+              experiment={exp}
+              onDone={() => {
+                setActiveExperiments(prev => prev.map(e => e.id === exp.id ? { ...e, trackedToday: true } : e));
+                if (labStep < untracked.length - 1) {
+                  transition(() => setLabStep(s => s + 1));
+                } else {
+                  transition(() => setStep('insight'));
+                }
+              }}
+            />
+          );
+        })()}
       </div>
+    </div>
+  );
+}
+
+// ─── Lab Micro Tracker ────────────────────────────────────────
+
+function LabMicroTracker({
+  experiment,
+  onDone,
+}: {
+  experiment: { id: string; pattern_title: string; triggers: string[]; different_action: string };
+  onDone: () => void;
+}) {
+  const [emerged, setEmerged] = useState<boolean | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  async function save(e: boolean, response?: string) {
+    setSaving(true);
+    await fetch(`/api/experiments/${experiment.id}/entries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ emerged: e, response: response ?? null }),
+    }).catch(() => null);
+    setSaving(false);
+    onDone();
+  }
+
+  return (
+    <div>
+      <p style={label('var(--gold)')}>Lab</p>
+      <h2 style={{ ...heading, marginBottom: '0.5rem' }}>{experiment.pattern_title}</h2>
+      <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '2rem', lineHeight: 1.6 }}>
+        Ricorda: {experiment.triggers[0]} → {experiment.different_action}
+      </p>
+
+      {emerged === null ? (
+        <>
+          <p style={{ fontFamily: 'Georgia, serif', fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '1.5rem' }}>
+            Il pattern è emerso oggi?
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <button onClick={() => save(false)} disabled={saving} style={outlineBtn}>No, non è emerso</button>
+            <button onClick={() => setEmerged(true)} disabled={saving} style={outlineBtn}>Sì, è emerso →</button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p style={{ fontFamily: 'Georgia, serif', fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '1.5rem' }}>
+            Cosa è successo?
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            {[
+              { value: 'acted_differently', label: 'Ho agito diversamente',          color: 'var(--pattern)' },
+              { value: 'noticed_during',    label: 'Ci sono caduto, l\'ho visto',   color: 'var(--gold)' },
+              { value: 'noticed_after',     label: 'Ci sono caduto, l\'ho visto dopo', color: '#7A8B9E' },
+              { value: 'automatic',         label: 'Non l\'ho visto',               color: '#B45454' },
+            ].map(r => (
+              <button
+                key={r.value}
+                onClick={() => save(true, r.value)}
+                disabled={saving}
+                style={{ ...outlineBtn, color: r.color, borderColor: 'var(--border)' }}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

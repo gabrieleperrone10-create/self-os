@@ -1,9 +1,19 @@
+export const maxDuration = 60;
+
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { anthropic, AI_MODEL } from '@/lib/anthropic/client';
 import { MONTHLY_LETTER_PROMPT } from '@/lib/anthropic/prompts/monthly-letter';
 import { fetchFullContext } from '@/lib/knowledge-base/fetch';
 import type { Checkin, Decision, Pattern, Scan } from '@/types';
+
+function buildExpectationGapContext(scan: Scan | null): string {
+  if (!scan?.analysis) return '';
+  const a = scan.analysis as unknown as Record<string, unknown>;
+  const gap = a.expectation_gap as { declared_expectation?: string; observed_behavior?: string; gap_dynamic?: string } | undefined;
+  if (!gap?.gap_dynamic) return '';
+  return `\nCONTESTO STRUTTURALE — GAP ASPETTATIVE/ESECUZIONE:\n${gap.gap_dynamic}\nDichiarato: ${gap.declared_expectation ?? '—'}\nComportamento reale: ${gap.observed_behavior ?? '—'}\nQuesta tensione è il dato più importante del profilo — nominala nella lettera, non aggirarla.\n`;
+}
 
 export async function POST(request: Request) {
   try {
@@ -53,7 +63,8 @@ export async function POST(request: Request) {
     const scan = scanRes.data;
 
     const kbContext = await fetchFullContext();
-    const prompt = MONTHLY_LETTER_PROMPT(checkins, decisions, patterns, scan, month, year, kbContext);
+    const gapContext = buildExpectationGapContext(scan);
+    const prompt = MONTHLY_LETTER_PROMPT(checkins, decisions, patterns, scan, month, year, kbContext + gapContext);
 
     const message = await anthropic.messages.create({
       model: AI_MODEL,

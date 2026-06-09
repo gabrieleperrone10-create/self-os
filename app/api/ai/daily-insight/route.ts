@@ -1,3 +1,5 @@
+export const maxDuration = 60;
+
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { anthropic, AI_MODEL } from '@/lib/anthropic/client';
@@ -33,6 +35,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Check-in non trovato' }, { status: 404 });
     }
 
+    // Fetch last 5 checkins of same type for repetition detection
+    const { data: recentCheckins } = await supabase
+      .from('checkins')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('type', checkin.type)
+      .neq('id', checkinId)
+      .order('date', { ascending: false })
+      .limit(5);
+
     const kbContext = await fetchFrameworkContext();
 
     // Call Claude
@@ -42,7 +54,7 @@ export async function POST(request: Request) {
       messages: [
         {
           role: 'user',
-          content: DAILY_INSIGHT_PROMPT(checkin, kbContext),
+          content: DAILY_INSIGHT_PROMPT(checkin, (recentCheckins ?? []) as Checkin[], kbContext),
         },
       ],
     });

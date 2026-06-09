@@ -1,9 +1,19 @@
+export const maxDuration = 60;
+
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { anthropic, AI_MODEL } from '@/lib/anthropic/client';
 import { WEEKLY_REPORT_PROMPT } from '@/lib/anthropic/prompts/weekly-report';
 import { fetchFullContext } from '@/lib/knowledge-base/fetch';
-import type { Checkin, Decision, Pattern } from '@/types';
+import type { Checkin, Decision, Pattern, Scan } from '@/types';
+
+function buildExpectationGapContext(scan: Scan | null): string {
+  if (!scan?.analysis) return '';
+  const a = scan.analysis as unknown as Record<string, unknown>;
+  const gap = a.expectation_gap as { declared_expectation?: string; observed_behavior?: string; gap_dynamic?: string } | undefined;
+  if (!gap?.gap_dynamic) return '';
+  return `\nCONTESTO STRUTTURALE — GAP ASPETTATIVE/ESECUZIONE:\n${gap.gap_dynamic}\nDichiarato: ${gap.declared_expectation ?? '—'}\nComportamento reale: ${gap.observed_behavior ?? '—'}\nQuesta tensione è il dato più importante del profilo — nominala nel report, non aggirarla.\n`;
+}
 
 export async function POST(request: Request) {
   try {
@@ -25,8 +35,8 @@ export async function POST(request: Request) {
     const weekStart = body.weekStart ?? monday.toISOString().split('T')[0];
     const weekEnd = body.weekEnd ?? sunday.toISOString().split('T')[0];
 
-    // Fetch week data
-    const [checkinsRes, decisionsRes, patternsRes] = await Promise.all([
+    // Fetch week data + scan for gap context
+    const [checkinsRes, decisionsRes, patternsRes, scanRes] = await Promise.all([
       supabase
         .from('checkins')
         .select('*')
@@ -44,14 +54,23 @@ export async function POST(request: Request) {
         .select('*')
         .eq('user_id', user.id)
         .eq('is_active', true),
+      supabase
+        .from('scans')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('completed_at', { ascending: false })
+        .limit(1)
+        .single<Scan>(),
     ]);
 
     const checkins = (checkinsRes.data ?? []) as Checkin[];
     const decisions = (decisionsRes.data ?? []) as Decision[];
     const patterns = (patternsRes.data ?? []) as Pattern[];
+    const scan = scanRes.data ?? null;
 
     const kbContext = await fetchFullContext();
-    const prompt = WEEKLY_REPORT_PROMPT(checkins, decisions, patterns, weekStart, weekEnd, kbContext);
+    const gapContext = buildExpectationGapContext(scan);
+    const prompt = WEEKLY_REPORT_PROMPT(checkins, decisions, patterns, weekStart, weekEnd, kbContext + gapContext);
 
     const message = await anthropic.messages.create({
       model: AI_MODEL,

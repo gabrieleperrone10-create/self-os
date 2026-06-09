@@ -45,15 +45,7 @@ export function IdentityMapCharts({ lineData, radarData, avgScore }: Props) {
   const hasLineData = lineData.length > 0;
 
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 320px',
-        gap: '1.5rem',
-        marginBottom: '3rem',
-        alignItems: 'start',
-      }}
-    >
+    <div className="identity-charts-grid">
       {/* Line chart */}
       <div style={chartCard}>
         <p style={chartLabel('var(--stato)')}>Stato interno — 30 giorni</p>

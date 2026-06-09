@@ -506,6 +506,23 @@ input[type="range"]::-moz-range-thumb {
 .heatmap-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 0.5rem; }
 .heatmap-inner  { min-width: 480px; }
 
+/* Identity map — charts grid */
+.identity-charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+  align-items: start;
+}
+
+/* Letters — sidebar + content grid */
+.letters-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 2.5rem;
+  max-width: 860px;
+}
+
 /* Check-in cards 2→1 col */
 .checkin-grid {
   display: grid;
@@ -541,6 +558,12 @@ input[type="range"]::-moz-range-thumb {
   .archetype-primary-card { flex-direction: column; gap: 1.25rem; }
   .kbd-hint            { display: none !important; }
   .page-title-responsive { font-size: 1.6rem; }
+
+  /* Identity map charts: 1 colonna su mobile */
+  .identity-charts-grid { grid-template-columns: 1fr; }
+
+  /* Letters: sidebar sopra, lettera sotto */
+  .letters-layout { grid-template-columns: 1fr; gap: 1.5rem; }
 
   /* Titoli pagina — riduzione globale su mobile */
   .app-main h1 { font-size: 1.6rem !important; }

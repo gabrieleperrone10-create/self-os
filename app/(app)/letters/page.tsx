@@ -68,7 +68,7 @@ export default function LettersPage() {
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '2.5rem', maxWidth: '860px' }}>
+      <div className="letters-layout">
         {/* Sidebar — letter list */}
         <div>
           <button

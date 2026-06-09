@@ -176,7 +176,7 @@ export default function SegnaliPage() {
             {charsLeft} caratteri
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>⌘↵</span>
+            <span className="kbd-hint" style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>⌘↵</span>
             <button
               onClick={submit}
               disabled={!content.trim() || submitting}

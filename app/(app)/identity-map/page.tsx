@@ -84,7 +84,9 @@ export default async function IdentityMapPage() {
       {/* Heatmap */}
       <div style={{ marginBottom: '3rem' }}>
         <p style={{ ...mutedLabel, marginBottom: '1.25rem' }}>Consistenza — ultimi 90 giorni</p>
+        <div className="heatmap-scroll">
         <div
+          className="heatmap-inner"
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(13, 1fr)',
@@ -112,6 +114,7 @@ export default async function IdentityMapPage() {
               ))}
             </div>
           ))}
+        </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem' }}>
           <div style={{ width: '10px', height: '10px', borderRadius: '2px', backgroundColor: 'var(--border)' }} />

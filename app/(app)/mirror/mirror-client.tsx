@@ -319,14 +319,13 @@ export default function MirrorClient() {
       {step === 'result' && analysis && (
         <div style={{ maxWidth: '600px' }}>
           {/* Paura / Visione split */}
-          <div style={{
+          <div className="mirror-fear-card" style={{
             background: 'var(--surface)', border: '1px solid var(--border)',
             borderRadius: '3px', padding: '1.75rem 2rem', marginBottom: '1.25rem',
-            display: 'flex', gap: '1.5rem', alignItems: 'center',
           }}>
             <PieIndicator fearPct={analysis.paura_percent} />
             <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', gap: '2rem', marginBottom: '0.75rem' }}>
+              <div className="mirror-fear-stats">
                 <div>
                   <p style={{ fontSize: '0.58rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#B45454', marginBottom: '0.2rem' }}>Paura</p>
                   <p style={{ fontFamily: 'Georgia, serif', fontSize: '1.4rem', color: '#B45454', lineHeight: 1 }}>{analysis.paura_percent}%</p>

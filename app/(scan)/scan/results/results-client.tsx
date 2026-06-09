@@ -212,16 +212,13 @@ function Block1Archetypes({ report }: { report: ScanReport }) {
 
       {/* Primary — large card with ring */}
       <AnimatedBlock>
-        <div style={{
+        <div className="archetype-primary-card" style={{
           background: '#0F0E12',
           border: `1px solid ${primaryColor}30`,
           borderTop: `2px solid ${primaryColor}`,
           borderRadius: '3px',
           padding: '2rem',
           marginBottom: '1rem',
-          display: 'flex',
-          gap: '2rem',
-          alignItems: 'flex-start',
         }}>
           <ProgressRing score={report.archetype_primary.score} color={primaryColor} size={120} />
           <div style={{ flex: 1 }}>

@@ -217,7 +217,7 @@ a {
 
   /* Main content — extra bottom padding for nav bar */
   .app-main {
-    padding: 4rem 1.25rem 6rem;
+    padding: 1.5rem 1.25rem 6rem;
   }
 
   /* Hamburger button — top left */
@@ -333,6 +333,223 @@ input[type="range"]::-moz-range-thumb {
 ::selection {
   background: rgba(201,169,110,0.2);
   color: var(--text-primary);
+}
+
+/* ─── Landing page animations ─────────────────────────────── */
+
+/* Hero word-by-word blur reveal */
+@keyframes hero-word-in {
+  from { opacity: 0; transform: translateY(10px); filter: blur(8px); }
+  to   { opacity: 1; transform: translateY(0);    filter: blur(0);   }
+}
+
+.hero-word {
+  display: inline-block;
+  animation: hero-word-in 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--delay, 0s);
+}
+
+.hero-sub {
+  animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 1.1s;
+}
+
+.hero-cta {
+  animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 1.35s;
+}
+
+/* Expanding identity rings — hero background */
+@keyframes ring-expand {
+  0%   { transform: scale(0.15); opacity: 0;    }
+  8%   {                         opacity: 0.11; }
+  72%  {                         opacity: 0.03; }
+  100% { transform: scale(3.8);  opacity: 0;    }
+}
+
+.hero-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ring-expand 15s ease-out both infinite;
+  animation-delay: var(--ring-delay, 0s);
+}
+
+/* Level dot pulse */
+@keyframes dot-pulse {
+  0%, 100% { transform: scale(1);   opacity: 0.65; }
+  50%       { transform: scale(1.6); opacity: 1;    }
+}
+
+.level-dot {
+  display: block;
+  flex-shrink: 0;
+  animation: dot-pulse 3s ease-in-out infinite;
+  animation-delay: var(--pulse-delay, 0s);
+}
+
+/* Problem section — text + loop diagram side by side */
+.problem-grid {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: clamp(3rem, 6vw, 5rem);
+  align-items: center;
+}
+
+@media (max-width: 680px) {
+  .problem-grid {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+}
+
+/* Scroll reveal — content always visible; JS progressively enhances */
+[data-scroll-enhanced] .scroll-reveal {
+  opacity: 0.06;
+  transform: translateY(18px);
+  transition:
+    opacity  0.85s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--reveal-delay, 0s);
+}
+
+[data-scroll-enhanced] .scroll-reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Level rows — responsive grid */
+.level-row {
+  display: grid;
+  grid-template-columns: 148px 1fr;
+  gap: 2rem;
+}
+
+@media (max-width: 560px) {
+  .level-row {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+}
+
+/* Hero grid — titolo sx, loop diagram dx */
+.hero-layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: clamp(3rem, 6vw, 6rem);
+  align-items: center;
+}
+
+@media (max-width: 780px) {
+  .hero-layout {
+    grid-template-columns: 1fr;
+  }
+  .hero-loop {
+    order: -1; /* Loop diagram sopra il testo su mobile */
+  }
+}
+
+/* Level rows v2 — con tint di sfondo */
+.level-row-v2 {
+  display: grid;
+  grid-template-columns: clamp(120px, 18vw, 200px) 1fr;
+  gap: clamp(1.5rem, 4vw, 4rem);
+  align-items: start;
+}
+
+@media (max-width: 560px) {
+  .level-row-v2 {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+}
+
+/* Scroll reveal — classe .sr (alias compatto) */
+[data-scroll-enhanced] .sr {
+  opacity: 0.06;
+  transform: translateY(16px);
+  transition:
+    opacity  0.85s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--reveal-delay, 0s);
+}
+
+[data-scroll-enhanced] .sr.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Reduced motion — disable all landing animations */
+@media (prefers-reduced-motion: reduce) {
+  .hero-word, .hero-sub, .hero-cta {
+    animation: none !important;
+    opacity: 1 !important; filter: none !important; transform: none !important;
+  }
+  .hero-ring {
+    animation: none !important;
+    opacity: 0.04 !important;
+  }
+  .level-dot {
+    animation: none !important;
+    opacity: 0.7 !important;
+  }
+  [data-scroll-enhanced] .scroll-reveal,
+  [data-scroll-enhanced] .sr {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+/* ─── Mobile responsive utilities ────────────────────────────────────────────── */
+
+/* Heatmap — scroll orizzontale su mobile */
+.heatmap-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 0.5rem; }
+.heatmap-inner  { min-width: 480px; }
+
+/* Check-in cards 2→1 col */
+.checkin-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  max-width: 560px;
+  margin-bottom: 3rem;
+}
+
+/* Mirror — result card paura/visione */
+.mirror-fear-card { display: flex; gap: 1.5rem; align-items: center; }
+.mirror-fear-stats { display: flex; gap: 2rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+
+/* Scan results — archetype primary card */
+.archetype-primary-card { display: flex; gap: 2rem; align-items: flex-start; }
+
+/* Segnali — mostra shortcut solo su desktop */
+.kbd-hint { display: inline-flex; align-items: center; gap: 0.75rem; }
+
+/* Page title sizing */
+.page-title-responsive {
+  font-family: Georgia, serif;
+  font-size: 2rem;
+  font-weight: normal;
+  color: var(--text-primary);
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .checkin-grid        { grid-template-columns: 1fr 1fr; } /* 2 col va bene su mobile */
+  .mirror-fear-card    { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .mirror-fear-stats   { gap: 1.5rem; }
+  .archetype-primary-card { flex-direction: column; gap: 1.25rem; }
+  .kbd-hint            { display: none !important; }
+  .page-title-responsive { font-size: 1.6rem; }
+
+  /* Titoli pagina — riduzione globale su mobile */
+  .app-main h1 { font-size: 1.6rem !important; }
+
+  /* Textarea più alta su mobile per comodità di scrittura */
+  .app-main textarea { min-height: 100px; }
+
+  /* Bottoni full-width su mobile per tocco più facile */
+  .app-main .btn-full-mobile { width: 100%; text-align: center; }
 }
 
 /* Hover utility classes — usate nei Server Components al posto di onMouseEnter/onMouseLeave */

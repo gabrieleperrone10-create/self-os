@@ -3,7 +3,9 @@ export const maxDuration = 60;
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { anthropic, AI_MODEL } from '@/lib/anthropic/client';
-import { MIRROR_PROMPT, type MirrorAnswers, type MirrorAnalysis } from '@/lib/anthropic/prompts/mirror';
+import { MIRROR_PROMPT, type MirrorAnswers } from '@/lib/anthropic/prompts/mirror';
+import { parseAIJson } from '@/lib/anthropic/parsers';
+import { mirrorAnalysisSchema } from '@/lib/anthropic/schemas';
 import { fetchFrameworkContext } from '@/lib/knowledge-base/fetch';
 import type { Decision, DecisionOrigin } from '@/types';
 
@@ -37,9 +39,7 @@ export async function POST(request: Request) {
     const rawContent = message.content[0];
     if (rawContent.type !== 'text') throw new Error('Risposta AI non valida');
 
-    const jsonText = rawContent.text
-      .replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
-    const analysis = JSON.parse(jsonText) as MirrorAnalysis;
+    const analysis = parseAIJson(rawContent.text, mirrorAnalysisSchema, 'mirror');
 
     // origin derived from clarity score
     const origin: DecisionOrigin = clarity_score >= 6 ? 'vision' : 'fear';

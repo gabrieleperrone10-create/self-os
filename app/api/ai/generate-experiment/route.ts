@@ -4,7 +4,9 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { anthropic } from '@/lib/anthropic/client';
 import { EXPERIMENT_GENERATOR_PROMPT } from '@/lib/anthropic/prompts/experiment-generator';
-import type { Pattern, Scan, ExperimentGeneration } from '@/types';
+import { parseAIJson } from '@/lib/anthropic/parsers';
+import { experimentGenerationSchema } from '@/lib/anthropic/schemas';
+import type { Pattern, Scan } from '@/types';
 
 // Opus for experiment generation — needs deep reasoning on the loop structure
 const MODEL = 'claude-opus-4-8';
@@ -62,10 +64,7 @@ export async function POST(request: Request) {
     const raw = message.content[0];
     if (raw.type !== 'text') throw new Error('Risposta AI non valida');
 
-    const jsonMatch = raw.text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('JSON non trovato nella risposta');
-
-    const generation = JSON.parse(jsonMatch[0]) as ExperimentGeneration;
+    const generation = parseAIJson(raw.text, experimentGenerationSchema, 'generate-experiment');
 
     return NextResponse.json({ generation, patternId: patternId ?? null });
   } catch (err) {

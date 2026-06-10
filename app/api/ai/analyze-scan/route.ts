@@ -5,7 +5,9 @@ import { createClient } from '@/lib/supabase/server';
 import { anthropic, AI_MODEL } from '@/lib/anthropic/client';
 import { SCAN_ANALYSIS_PROMPT } from '@/lib/anthropic/prompts/scan-analysis';
 import { fetchFullContext } from '@/lib/knowledge-base/fetch';
-import type { ScanAnswers, ScanReport } from '@/types/scan';
+import { parseAIJson } from '@/lib/anthropic/parsers';
+import { scanReportSchema } from '@/lib/anthropic/schemas';
+import type { ScanAnswers } from '@/types/scan';
 
 export async function POST(request: Request) {
   try {
@@ -41,14 +43,7 @@ export async function POST(request: Request) {
       throw new Error('Risposta AI non valida');
     }
 
-    // Parse JSON — Claude might wrap in ```json blocks
-    const jsonText = rawContent.text
-      .replace(/^```json\s*/i, '')
-      .replace(/^```\s*/i, '')
-      .replace(/```\s*$/i, '')
-      .trim();
-
-    const analysis = JSON.parse(jsonText) as ScanReport;
+    const analysis = parseAIJson(rawContent.text, scanReportSchema, 'analyze-scan');
 
     // Save scan to Supabase
     const { data: scan, error: scanError } = await supabase

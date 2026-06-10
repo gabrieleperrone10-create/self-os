@@ -33,6 +33,8 @@ export interface ScanReport {
   belief_limiting_primary: { text: string; origin: string };
   belief_limiting_secondary: { text: string; origin: string };
   belief_resource: { text: string };
+  // Generato dal prompt, letto da monthly-letter e weekly-report
+  expectation_gap?: { declared_expectation: string; observed_behavior: string; gap_dynamic: string };
   wheel_expansion: string[];
   wheel_loops: string[];
   wheel_priority: { area: string; reason: string };

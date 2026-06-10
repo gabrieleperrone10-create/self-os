@@ -1,3 +1,10 @@
+export interface VoiceAnalysis {
+  state_score: number;
+  keywords: string[];
+  pattern: string | null;
+  insight: string;
+}
+
 export const VOICE_ANALYSIS_PROMPT = (transcript: string): string => `
 Hai ricevuto un messaggio vocale trascritto.
 Estrai in JSON valido. Nessun testo prima o dopo.

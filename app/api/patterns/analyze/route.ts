@@ -1,9 +1,13 @@
+export const maxDuration = 60;
+
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { anthropic, AI_MODEL } from '@/lib/anthropic/client';
 import { PATTERN_RECOGNITION_PROMPT } from '@/lib/anthropic/prompts/pattern-recognition';
 import { fetchArchetypesContext } from '@/lib/knowledge-base/fetch';
-import type { Checkin, PatternRecognitionResult } from '@/types';
+import { parseAIJson } from '@/lib/anthropic/parsers';
+import { patternRecognitionSchema } from '@/lib/anthropic/schemas';
+import type { Checkin } from '@/types';
 
 export async function POST() {
   try {
@@ -47,13 +51,7 @@ export async function POST() {
     const rawContent = message.content[0];
     if (rawContent.type !== 'text') throw new Error('Risposta AI non valida');
 
-    const jsonText = rawContent.text
-      .replace(/^```json\s*/i, '')
-      .replace(/^```\s*/i, '')
-      .replace(/```\s*$/i, '')
-      .trim();
-
-    const result = JSON.parse(jsonText) as PatternRecognitionResult;
+    const result = parseAIJson(rawContent.text, patternRecognitionSchema, 'patterns-analyze');
 
     // Upsert patterns — deactivate old ones first, then insert new
     await supabase

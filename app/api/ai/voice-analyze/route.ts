@@ -4,13 +4,10 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { anthropic, AI_MODEL } from '@/lib/anthropic/client';
 import { VOICE_ANALYSIS_PROMPT } from '@/lib/anthropic/prompts/voice-analysis';
+import { parseAIJson } from '@/lib/anthropic/parsers';
+import { voiceAnalysisSchema } from '@/lib/anthropic/schemas';
 
-export interface VoiceAnalysis {
-  state_score: number;
-  keywords: string[];
-  pattern: string | null;
-  insight: string;
-}
+export type { VoiceAnalysis } from '@/lib/anthropic/prompts/voice-analysis';
 
 export async function POST(request: Request) {
   try {
@@ -38,13 +35,7 @@ export async function POST(request: Request) {
     const rawContent = message.content[0];
     if (rawContent.type !== 'text') throw new Error('Risposta AI non valida');
 
-    const jsonText = rawContent.text
-      .replace(/^```json\s*/i, '')
-      .replace(/^```\s*/i, '')
-      .replace(/```\s*$/i, '')
-      .trim();
-
-    const analysis = JSON.parse(jsonText) as VoiceAnalysis;
+    const analysis = parseAIJson(rawContent.text, voiceAnalysisSchema, 'voice-analyze');
 
     // Optionally save as a check-in
     if (saveCheckin) {

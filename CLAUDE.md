@@ -58,11 +58,17 @@ Grafici:       Recharts (SEMPRE in Client Components separati: page.tsx server +
 | Lab | `/lab` | esperimenti comportamentali 7 giorni (generazione Opus) |
 | Lettere | `/letters` | lettera mensile AI |
 | Coach | `/coach` | dashboard clienti (ruolo coach), note private, invite link |
-| Settings | `/settings` | account, piano (Stripe portal) |
+| Distanza | `/distanza` | profilo identitario v-prec vs v-corrente + metriche derivate |
+| Settings | `/settings` | account, piano (Stripe portal), promemoria email, export/delete GDPR |
 
 API AI: `analyze-scan`, `daily-insight`, `mirror`, `analyze-signal`, `voice-analyze`,
 `generate-experiment`, `momentum-insight`, `monthly-letter`, `outcome-reflection`,
 `weekly-report`, `identity-profile`, `patterns/analyze`.
+API account: `account/export`, `account/delete`, `account/preferences`.
+Cron (vercel.json, auth CRON_SECRET): `cron/morning` (06 UTC — reminder + lettera
+mensile il giorno 1), `cron/evening` (19 UTC — reminder + nudge esiti + weekly
+report la domenica). Generazione condivisa in `lib/ai/reports.ts` — route e lib
+vanno committate INSIEME (§2.8).
 
 ---
 

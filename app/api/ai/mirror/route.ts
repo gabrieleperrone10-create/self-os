@@ -2,7 +2,7 @@ export const maxDuration = 60;
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { anthropic, AI_MODEL } from '@/lib/anthropic/client';
+import { anthropic, AI_MODEL, cachedKbSystem } from '@/lib/anthropic/client';
 import { MIRROR_PROMPT, type MirrorAnswers } from '@/lib/anthropic/prompts/mirror';
 import { parseAIJson } from '@/lib/anthropic/parsers';
 import { mirrorAnalysisSchema } from '@/lib/anthropic/schemas';
@@ -33,7 +33,8 @@ export async function POST(request: Request) {
     const message = await anthropic.messages.create({
       model: AI_MODEL,
       max_tokens: 800,
-      messages: [{ role: 'user', content: MIRROR_PROMPT(body, decisions, kbContext) }],
+      system: cachedKbSystem(kbContext, 'Usa questa base come lente invisibile — non citare framework, non usare termini tecnici.'),
+      messages: [{ role: 'user', content: MIRROR_PROMPT(body, decisions) }],
     });
 
     const rawContent = message.content[0];

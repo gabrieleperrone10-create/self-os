@@ -2,7 +2,7 @@ export const maxDuration = 60;
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { anthropic, AI_MODEL } from '@/lib/anthropic/client';
+import { anthropic, AI_MODEL, cachedKbSystem } from '@/lib/anthropic/client';
 import { DAILY_INSIGHT_PROMPT } from '@/lib/anthropic/prompts/daily-insight';
 import { fetchFrameworkContext } from '@/lib/knowledge-base/fetch';
 import type { Checkin } from '@/types';
@@ -51,10 +51,11 @@ export async function POST(request: Request) {
     const message = await anthropic.messages.create({
       model: AI_MODEL,
       max_tokens: 512,
+      system: cachedKbSystem(kbContext, 'Usa questa base psicologica come lente invisibile — non citare mai i framework.'),
       messages: [
         {
           role: 'user',
-          content: DAILY_INSIGHT_PROMPT(checkin, (recentCheckins ?? []) as Checkin[], kbContext),
+          content: DAILY_INSIGHT_PROMPT(checkin, (recentCheckins ?? []) as Checkin[]),
         },
       ],
     });

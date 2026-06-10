@@ -2,7 +2,7 @@ export const maxDuration = 60;
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { anthropic, AI_MODEL } from '@/lib/anthropic/client';
+import { anthropic, AI_MODEL, cachedKbSystem } from '@/lib/anthropic/client';
 import { MONTHLY_LETTER_PROMPT } from '@/lib/anthropic/prompts/monthly-letter';
 import { fetchFullContext } from '@/lib/knowledge-base/fetch';
 import type { Checkin, Decision, Pattern, Scan } from '@/types';
@@ -64,11 +64,13 @@ export async function POST(request: Request) {
 
     const kbContext = await fetchFullContext();
     const gapContext = buildExpectationGapContext(scan);
-    const prompt = MONTHLY_LETTER_PROMPT(checkins, decisions, patterns, scan, month, year, kbContext + gapContext);
+    const prompt = MONTHLY_LETTER_PROMPT(checkins, decisions, patterns, scan, month, year);
 
     const message = await anthropic.messages.create({
       model: AI_MODEL,
       max_tokens: 1024,
+      // gapContext è per-utente: secondo blocco system, fuori dal prefisso cachato
+      system: cachedKbSystem(kbContext, "Usa l'intera base psicologica — archetipi, loop, IFS, processo di trasformazione — per scrivere una lettera che vada in profondità. Non limitarti a riassumere i dati: rifletti l'identità.", gapContext),
       messages: [{ role: 'user', content: prompt }],
     });
 

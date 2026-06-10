@@ -103,6 +103,23 @@ tutti e tre.
 finisce la beta, qui va stretto il gate, e questo cambierà cosa è visibile a
 chi.
 
+### 2.7-bis Nuovi punti condivisi (sessione 2026-06-10)
+- **`lib/anthropic/parsers.ts` + `lib/anthropic/schemas.ts`**: parsing/validazione
+  output AI per TUTTE le route con output JSON (5). Gli schemi usano
+  `satisfies z.ZodType<T>` contro le interfacce esistenti: se cambi un tipo di
+  output, lo schema va aggiornato nello stesso commit (TS te lo impone).
+- **`lib/anthropic/client.ts` → `cachedKbSystem()`**: usata da 7 route. Il
+  contesto per-utente va nel 3° argomento, MAI concatenato al kbContext
+  (romperebbe la condivisione della prompt cache tra utenti).
+- **`lib/ai/usage.ts`**: quota + tracking in TUTTE le route AI (12). Fail-open
+  by design — non trasformarlo in fail-closed senza pensarci.
+- **`lib/ai/identity-profile.ts`**: profilo longitudinale iniettato in mirror,
+  daily-insight, weekly-report, monthly-letter; refresh via `after()` in
+  daily-insight. Tabella `identity_profiles` (migrazione 007).
+- **`evals/`**: importa i VERI builder e schemi di produzione — se cambi la firma
+  di un prompt valutato (mirror, daily-insight, scan-analysis), `evals/run.ts`
+  smette di compilare: aggiornalo nello stesso commit.
+
 ### 2.8 Coppie prompt + route (`lib/anthropic/prompts/*.ts` ↔ `app/api/ai/*/route.ts`)
 **È:** ogni prompt esporta una funzione con una firma precisa (numero/ordine
 parametri); la route corrispondente la chiama con quegli argomenti esatti. Le
@@ -170,8 +187,10 @@ perché sviluppate in branch/sessioni parallele senza coordinamento:
   committato in `232a87e`, schema applicato al DB live.
 - `003_knowledge_base.sql` **e** `003_signals.sql` — **non risolto**, stesso
   rischio di sotto.
-- `004_signals_content_length.sql` esiste già — il prossimo numero libero per
-  una nuova migrazione è **006**.
+- `004_signals_content_length.sql` esiste già.
+- **2026-06-10:** aggiunte `006_ai_usage.sql` e `007_identity_profiles.sql` —
+  ⚠ **da applicare al DB live via SQL Editor** (il codice è fail-open finché
+  non lo sono). Prossimo numero libero: **008**.
 
 **Risolto il 2026-06-10:** il file `supabase/migrations/002_lab.sql`
 non tracciato (duplicato identico di `005_lab.sql`, residuo di un checkout

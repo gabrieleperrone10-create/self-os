@@ -76,6 +76,15 @@ export default async function DashboardPage() {
   // Momentum score
   const momentum = calculateMomentum(checkins, decisions, streak);
 
+  // Re-entry alert: scan done but no checkin in 7+ days
+  const daysSinceLastCheckin = checkins.length > 0
+    ? Math.floor((Date.now() - new Date(checkins[0].date + 'T12:00:00').getTime()) / 86400000)
+    : null;
+  const showReentryAlert = hasScan && (checkins.length === 0 || (daysSinceLastCheckin !== null && daysSinceLastCheckin >= 7));
+  const reentryDays = checkins.length === 0 && scan
+    ? Math.floor((Date.now() - new Date(scan.completed_at).getTime()) / 86400000)
+    : daysSinceLastCheckin;
+
   // Today's state score
   const todayScore = todayCheckins.length > 0
     ? Math.round(todayCheckins.reduce((s, c) => s + (c.state_score ?? 0), 0) / todayCheckins.length)
@@ -88,6 +97,37 @@ export default async function DashboardPage() {
         <p style={mutedLabel}>Sistema Operativo Identitario</p>
         <h1 style={pageTitle}>Benvenuto, {firstName}</h1>
       </div>
+
+      {/* Re-entry alert */}
+      {showReentryAlert && (
+        <div style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderLeft: '2px solid var(--text-muted)',
+          borderRadius: '3px',
+          padding: '1.25rem 1.75rem',
+          marginBottom: '2rem',
+          maxWidth: '560px',
+        }}>
+          <p style={{ fontSize: '0.65rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
+            {reentryDays !== null && reentryDays >= 90
+              ? `${reentryDays} giorni`
+              : reentryDays !== null && reentryDays >= 30
+              ? `${reentryDays} giorni`
+              : 'Assenza rilevata'}
+          </p>
+          <p style={{ fontFamily: 'Georgia, serif', fontSize: '0.95rem', color: 'var(--text-primary)', lineHeight: 1.75, marginBottom: '1rem' }}>
+            {reentryDays !== null && reentryDays >= 30
+              ? `${reentryDays} giorni sono già un pattern. La domanda non è perché non sei tornato — è cosa ti ha riportato qui adesso.`
+              : checkins.length === 0
+              ? 'Hai fatto lo scan. Da allora: silenzio. Non è un problema — è un dato. Cosa stai notando adesso che sei qui?'
+              : `Sono passati ${reentryDays} giorni dall'ultimo check-in. Non è un problema — è un dato. Cosa è successo in questo tempo?`}
+          </p>
+          <a href="/checkin" style={{ fontSize: '0.8rem', color: 'var(--gold)', textDecoration: 'none', fontFamily: 'Georgia, serif' }}>
+            Fai un check-in ora →
+          </a>
+        </div>
+      )}
 
       {/* Onboarding progress */}
       {!onboardingDone && (

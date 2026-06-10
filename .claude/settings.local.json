@@ -41,7 +41,28 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code} %{redirect_url}\" http://localhost:3000/ 2>&1)",
       "Bash(pkill -f \"next dev\" 2>/dev/null; rm -rf /Users/gabrieleperrone/Desktop/self-os/.next && echo \"Cache cleared\")",
       "Bash(which vercel 2>/dev/null || npx vercel --version 2>/dev/null | head -1 || echo \"vercel CLI non installata\")",
-      "Bash(git add -A && git commit -m \"SELF OS — full app\" 2>&1)"
+      "Bash(git add -A && git commit -m \"SELF OS — full app\" 2>&1)",
+      "Bash(git stash *)",
+      "Bash(git reset *)",
+      "Bash(cd *)",
+      "Bash(git push *)",
+      "Bash(gh auth *)",
+      "Bash(git remote *)",
+      "mcp__plugin_vercel_vercel__list_deployments",
+      "mcp__plugin_vercel_vercel__get_deployment_build_logs",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "mcp__plugin_vercel_vercel__get_deployment",
+      "Bash(npx supabase *)",
+      "Bash(git commit *)",
+      "Bash(ssh *)",
+      "Bash(curl *)",
+      "Bash(git mv *)",
+      "Bash(npx tsc *)",
+      "Bash(grep -iB2 -A2 \"lab\\\\|experiment\")",
+      "Bash(awk -F: '{print $1}')",
+      "Bash(git -C /Users/gabrieleperrone/Desktop/self-os diff --stat app/page.tsx)",
+      "Bash(git config *)"
     ]
   }
 }

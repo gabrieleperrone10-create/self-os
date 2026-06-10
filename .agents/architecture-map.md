@@ -103,6 +103,37 @@ tutti e tre.
 finisce la beta, qui va stretto il gate, e questo cambierà cosa è visibile a
 chi.
 
+### 2.8 Coppie prompt + route (`lib/anthropic/prompts/*.ts` ↔ `app/api/ai/*/route.ts`)
+**È:** ogni prompt esporta una funzione con una firma precisa (numero/ordine
+parametri); la route corrispondente la chiama con quegli argomenti esatti. Le
+due metà vivono in file diversi e **TypeScript le valida solo se ENTRAMBE
+sono nello stesso commit**.
+
+**È GIÀ SUCCESSO (incidente 2026-06-09/10 — produzione rotta per ~24h):**
+una sessione parallela aveva modifiche non committate sia a
+`daily-insight.ts` (nuova firma a 3 argomenti, aggiunta `recentCheckins`) sia
+a `app/api/ai/daily-insight/route.ts` (chiamata aggiornata a 3 argomenti).
+Il commit `e8215821` (fix maxDuration, fatto via `git add` dei soli file
+`route.ts`) ha incluso per errore le modifiche non correlate a `route.ts` ma
+NON quelle a `daily-insight.ts`. `npx tsc --noEmit -p .` in locale risultava
+pulito (vedeva entrambi i file, committed o no) → falso senso di sicurezza.
+`HEAD` restava incoerente: route con firma nuova (3 arg), prompt con firma
+vecchia (2 arg). Risultato: **3 deploy Vercel falliti di fila**
+(`e8215821`, `cccb4b9`, `3d7456b`), produzione bloccata sull'ultimo deploy
+READY (`232a87e`) per ~24h, finché non è stato notato e fixato committando
+anche `daily-insight.ts` (`4fef73d`).
+
+**Regola:**
+- Prima di un commit/push che tocca `app/api/ai/**`, fai `git status` e
+  controlla se il `lib/anthropic/prompts/<nome>.ts` corrispondente ha diff
+  non committati alla FIRMA della funzione export — se sì, includilo o lascia
+  fuori ANCHE la modifica alla route che dipende da quella firma.
+- `npx tsc --noEmit -p .` pulito sul working tree NON garantisce che `HEAD`
+  sia coerente, se ci sono file non committati di sessioni parallele.
+- **Dopo ogni push a `main`, controlla lo stato del deploy** (Vercel
+  `list_deployments`/build logs) — un push "verde" in locale non significa
+  build verde su Vercel.
+
 ---
 
 ## 3. Tabelle Supabase — chi le tocca
@@ -131,11 +162,20 @@ grep -rhoE "\.from\('[a-z_]+'\)" app lib --include="*.ts" --include="*.tsx" | so
 
 ## 4. Migrazioni — collisioni di numerazione note
 
-Le migrazioni in `supabase/migrations/` hanno **numeri duplicati** perché
-sviluppate in branch/sessioni parallele senza coordinamento:
+Le migrazioni in `supabase/migrations/` hanno (avuto) **numeri duplicati**
+perché sviluppate in branch/sessioni parallele senza coordinamento:
 
-- `002_lab.sql` **e** `002_weekly_reports_monthly_letters.sql`
-- `003_knowledge_base.sql` **e** `003_signals.sql`
+- ~~`002_lab.sql` e `002_weekly_reports_monthly_letters.sql`~~ — **risolto**
+  (sessione 2026-06-09): `002_lab.sql` rinominato `005_lab.sql` via `git mv`,
+  committato in `232a87e`, schema applicato al DB live.
+- `003_knowledge_base.sql` **e** `003_signals.sql` — **non risolto**, stesso
+  rischio di sotto.
+- `004_signals_content_length.sql` esiste già — il prossimo numero libero per
+  una nuova migrazione è **006**.
+
+**Risolto il 2026-06-10:** il file `supabase/migrations/002_lab.sql`
+non tracciato (duplicato identico di `005_lab.sql`, residuo di un checkout
+precedente al rename) è stato verificato con `diff` ed eliminato.
 
 **Perché è un rischio:** se un domani si introduce un tool di migration
 ordinato per nome/numero (es. Supabase CLI collegato), l'ordine di
@@ -146,7 +186,8 @@ passa a un flusso automatizzato.
 
 **Se aggiungi una nuova migrazione:** controlla l'ultimo numero realmente
 applicato al DB live (non solo il file più alto nella cartella, perché
-potrebbero essercene di non applicate), e usa il numero successivo libero.
+potrebbero essercene di non applicate), e usa il numero successivo libero
+(→ **006** al momento di scrivere).
 
 ---
 
@@ -170,6 +211,43 @@ Mai chiamate ad Anthropic da qui — solo costruzione testo.
 route API dedicata, niente chiamate dirette ad Anthropic dal client (regola
 del CLAUDE.md, sempre rispettata finora).
 
+### 5.4 `maxDuration = 60` su tutte le route AI
+Convenzione introdotta il 2026-06-09 (commit `e8215821`): ogni file
+`app/api/ai/*/route.ts` inizia con `export const maxDuration = 60;` (riga 1,
+seguita da riga vuota). Previene il "socket connection closed unexpectedly"
+causato dal timeout di default delle Vercel Functions sulle chiamate Claude
+più lunghe (es. Opus su `generate-experiment`). **Quando crei una nuova route
+AI, copia questa riga per prima cosa.**
+
+### 5.5 Classi CSS mobile condivise (`app/globals.css`)
+Pass di responsive design del 2026-06-09: dato che la maggior parte dei
+componenti usa `style={{...}}` inline (non className/Tailwind), gli override
+mobile vivono come classi dedicate in `app/globals.css`, applicate via
+`className` accanto allo `style` inline esistente, con override in
+`@media (max-width: 768px)`:
+
+- `.heatmap-scroll` / `.heatmap-inner` — heatmap identity-map scrollabile
+  orizzontalmente invece di comprimersi (min-width 480px)
+- `.identity-charts-grid` — grid `1fr 320px` → 1 colonna su mobile
+  (identity-map/charts.tsx, contiene line chart + radar 4 dimensioni)
+- `.letters-layout` — grid `200px 1fr` → 1 colonna su mobile (letters/page.tsx)
+- `.mirror-fear-card` / `.mirror-fear-stats` — card paura/visione si stacca
+  verticalmente su mobile (mirror-client.tsx)
+- `.archetype-primary-card` — card archetipo primario si stacca verticalmente
+  su mobile (scan/results/results-client.tsx)
+- `.kbd-hint` — nasconde lo shortcut `⌘↵` su mobile (segnali/page.tsx)
+- `.page-title-responsive` — h1 con font-size ridotto su mobile
+- `.checkin-grid` — **definita ma NON ancora usata** (dead code) — pensata
+  per dashboard/page.tsx ma non applicata; o usarla o rimuoverla
+- regole globali in `@media (max-width: 768px)`: `.app-main h1` (1.6rem),
+  `.app-main textarea` (min-height 100px), `.app-main .btn-full-mobile`
+  (width 100%)
+
+**Regola:** se aggiungi un nuovo layout a griglia/flex con dimensioni fisse
+in uno `style` inline e deve essere mobile-friendly, segui questo pattern
+(classe dedicata + override in questo media query) invece di inventarne uno
+nuovo.
+
 ---
 
 ## 6. Feature "in volo" — stato di integrazione
@@ -177,7 +255,14 @@ del CLAUDE.md, sempre rispettata finora).
 | Feature | Cartelle | In nav? | Tabelle DB | Note |
 |---|---|---|---|---|
 | Segnali | `app/(app)/segnali`, `app/api/signals`, `app/api/ai/analyze-signal` | ✅ sì | `signals` | In produzione (deploy `141f19e`, 2026-06-08) |
-| Lab/Experiments | `app/(app)/lab`, `app/api/experiments`, `app/api/ai/generate-experiment` | ❌ no | `experiments`, `experiment_entries` | Codice presente ma non linkato in sidebar — verificare se è WIP o dimenticanza prima di toccare |
+| Lab/Experiments | `app/(app)/lab`, `app/api/experiments`, `app/api/ai/generate-experiment` | ✅ sì | `experiments`, `experiment_entries` | In produzione (deploy `232a87e`, 2026-06-09). Voce `/lab` in `mainNav` e in `mobileBottomNav` (al posto di `/identity-map`, che resta solo nel sidebar desktop) |
+
+**Stato deploy produzione (verificare prima di assumere "deployato" = "live"):**
+dopo `232a87e` i 3 commit successivi (`e8215821` maxDuration,
+`cccb4b9`/`3d7456b` mobile responsive) hanno **fallito la build su Vercel**
+(vedi §2.8) — produzione è rimasta su `232a87e` per ~24h. Fix in `4fef73d`
+(2026-06-10). Se devi rispondere "è deployato?", non fidarti solo di
+`git log origin/main` — controlla `list_deployments`/build status.
 
 ---
 

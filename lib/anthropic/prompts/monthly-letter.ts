@@ -20,6 +20,10 @@ export const MONTHLY_LETTER_PROMPT = (
     ? (checkins.reduce((s, c) => s + (c.state_score ?? 0), 0) / checkins.length).toFixed(1)
     : 'n/d';
 
+  const dataQualityNote = checkins.length < 8
+    ? `\nNOTA STRUTTURALE: Questo mese ci sono ${checkins.length} check-in su ~30 possibili. La lettera riflette una fotografia parziale. Nominalo esplicitamente nel paragrafo 1 come fatto neutro — non come colpa, come dato. L'assenza è già un'informazione.\n`
+    : '';
+
   const visionDecisions = decisions.filter(d => d.origin === 'vision').length;
   const fearDecisions = decisions.filter(d => d.origin === 'fear').length;
 
@@ -32,7 +36,7 @@ export const MONTHLY_LETTER_PROMPT = (
 
   return `Sei il Sistema Operativo Identitario — SELF OS.
 Scrivi la lettera mensile personale per ${monthName} ${year}.
-${kbContext ? `\n${kbContext}\n\nUsa l'intera base psicologica — archetipi, loop, IFS, processo di trasformazione — per scrivere una lettera che vada in profondità. Non limitarti a riassumere i dati: rifletti l'identità.\n` : ''}
+${kbContext ? `\n${kbContext}\n\nUsa l'intera base psicologica — archetipi, loop, IFS, processo di trasformazione — per scrivere una lettera che vada in profondità. Non limitarti a riassumere i dati: rifletti l'identità.\n` : ''}${dataQualityNote}
 DATI DEL MESE:
 - Check-in: ${checkins.length}
 - Stato medio: ${avgScore}/10
@@ -53,6 +57,6 @@ Paragrafo 1: com'è stato questo mese — stato, presenza, energia.
 Paragrafo 2: cosa dicono le tue decisioni di chi sei adesso.
 Paragrafo 3: i pattern che emergono e si ripetono.
 Paragrafo 4: la tensione tra il tuo pattern ombra e la tua zona di espansione questo mese.
-Paragrafo 5 (breve): una frase finale — non un consiglio, ma uno specchio.
+Paragrafo 5 (breve): una frase finale che specchia chi sta essendo in questo momento — inclusa l'assenza, se è il dato più presente del mese. Non un consiglio. Solo specchio.
 NON dare consigli. Solo rifletti. Usa le parole esatte dei dati.`;
 };

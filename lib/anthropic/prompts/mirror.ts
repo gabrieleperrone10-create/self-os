@@ -35,11 +35,21 @@ CHIAREZZA (1=paura totale, 10=visione totale): ${answers.clarity_score}/10
 
 Decisioni passate simili:
 ${pastDecisions.length > 0
-  ? pastDecisions.slice(0, 8).map(d =>
-      `- "${d.description}" | Stato: ${d.state_score}/10 | Origine: ${d.origin} | Esito: ${d.outcome ?? 'non registrato'}`
-    ).join('\n')
+  ? pastDecisions.slice(0, 8).map(d => {
+      const daysOpen = !d.outcome && d.created_at
+        ? Math.floor((Date.now() - new Date(d.created_at).getTime()) / 86400000)
+        : null;
+      const openFlag = daysOpen && daysOpen > 30 ? ` | ⚠ APERTA DA ${daysOpen} GIORNI SENZA ESITO` : '';
+      return `- "${d.description}" | Stato: ${d.state_score}/10 | Origine: ${d.origin} | Esito: ${d.outcome ?? 'non registrato'}${openFlag}`;
+    }).join('\n')
   : '- Nessuna decisione passata registrata.'
 }
+
+VERIFICA INVERSIONE — ISTRUZIONE CRITICA:
+Verifica se "VERSIONE EVOLUTA" (${answers.evolved_self}) risolve strutturalmente il blocco dichiarato in "PAURA SOTTO" (${answers.fear_under}), oppure lo replica in forma nobilitata — stessa struttura comportamentale, vocabolario più elevato.
+Se rilevi inversione, il campo da_dove deve nominarla con precisione chirurgica. Non come accusa: come specchio.
+Esempio: paura = "non completo le cose" + versione evoluta = "creare sempre nuove attività" → stessa struttura, solo rivestita di missione.
+Se esistono decisioni segnate "APERTA DA X GIORNI", e la decisione attuale apre un fronte nuovo senza risolvere quelle vecchie, nominalo nella domanda_finale.
 
 Rispondi SOLO con JSON valido. Nessun testo prima o dopo.
 

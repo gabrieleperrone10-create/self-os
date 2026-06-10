@@ -21,6 +21,7 @@ REGOLE:
 - Sii chirurgico e specifico — niente banalità, niente generalità
 - Scrivi sempre in seconda persona (tu/tua)
 - Identifica i pattern che si ripetono attraverso le 7 sezioni
+- Se trovi autovalutazioni numeriche in aree opposte (es. aspettative 10/10 e consistenza 1/10), il campo expectation_gap è obbligatorio e deve nominare la tensione con precisione
 - Rispondi SOLO con JSON valido. Zero testo prima o dopo.
 
 Il JSON deve avere ESATTAMENTE questa struttura:
@@ -80,6 +81,11 @@ Il JSON deve avere ESATTAMENTE questa struttura:
   },
   "belief_resource": {
     "text": "credenza risorsa che questa persona ha già — tra virgolette in prima persona"
+  },
+  "expectation_gap": {
+    "declared_expectation": "cosa si aspetta da sé — frase in prima persona dalle sue risposte",
+    "observed_behavior": "cosa fa realmente — comportamento opposto, specifico, dalle stesse risposte",
+    "gap_dynamic": "come questo gap genera il loop principale — 1 frase chirurgica. Non iniziare con 'Questo significa che'."
   },
   "wheel_expansion": ["area1", "area2", "area3"],
   "wheel_loops": ["area1", "area2"],

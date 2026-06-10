@@ -36,7 +36,8 @@ export async function proxy(request: NextRequest) {
   const isAuthPath = authPaths.includes(pathname);
 
   // Public paths — accessible without auth
-  const isPublicPath = isAuthPath || pathname === '/' || pathname.startsWith('/api/webhooks') || pathname.startsWith('/join');
+  // /api/cron: autenticato via CRON_SECRET nella route, non via sessione
+  const isPublicPath = isAuthPath || pathname === '/' || pathname.startsWith('/api/webhooks') || pathname.startsWith('/api/cron') || pathname.startsWith('/join');
 
   // Redirect unauthenticated users to login
   if (!user && !isPublicPath) {

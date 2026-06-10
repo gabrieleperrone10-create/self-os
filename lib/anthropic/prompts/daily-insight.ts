@@ -41,7 +41,7 @@ Stato interno: ${checkin.state_score}/10
 ${answersText}
 ${recentThemes ? `\nCHECK-IN PRECEDENTI — ${isMorning ? 'ostacoli dichiarati' : 'pattern riconosciuti'}:\n${recentThemes}\n\nREGOLA RIPETIZIONE: Se l'utente nomina lo stesso ostacolo o pattern (anche con parole diverse) per 2+ check-in consecutivi, DEVI nominarlo esplicitamente come ricorrente — non come scoperta nuova, come conferma. La ripetizione è il dato più importante: non lasciarla passare. Se il linguaggio si fa più astratto nel tempo (es. da "il funnel" a "l'esecuzione"), segnalalo: l'utente si sta allontanando dal compito, non avvicinando.\n` : ''}
 CALIBRA IL REGISTRO: Leggi il livello di investimento dell'input.
-- Input breve, monosillabico o frettoloso → rispondi asciutto, max 1-2 frasi. NON elaborare metafore.
+- Input breve, monosillabico o frettoloso → MAX 2 frasi totali, domanda inclusa. VIETATO: metafore, interpretazioni costruite, psicoanalisi della brevità. Solo rispecchio fattuale. Questa regola DOMINA su tutte le istruzioni successive (incluse lunghezza e struttura della chiusura).
 - Input ricco e articolato → puoi permetterti più profondità.
 
 Genera una riflessione di 2-3 righe in seconda persona.

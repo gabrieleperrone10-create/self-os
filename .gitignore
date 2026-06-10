@@ -43,6 +43,9 @@ next-env.d.ts
 # research — raw data exports (contain user data, never commit)
 research/data/
 
+# eval harness — report di esecuzione (rigenerabili)
+evals/results/
+
 # skills installate (gestite da skills-lock.json, come node_modules)
 .agents/skills/
 .claude/skills/

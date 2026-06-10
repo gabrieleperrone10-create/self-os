@@ -6,6 +6,7 @@ import { checkAiQuota, recordAiUsage, quotaExceededBody } from '@/lib/ai/usage';
 import { anthropic, AI_MODEL, cachedKbSystem } from '@/lib/anthropic/client';
 import { WEEKLY_REPORT_PROMPT } from '@/lib/anthropic/prompts/weekly-report';
 import { fetchFullContext } from '@/lib/knowledge-base/fetch';
+import { identityProfileContext } from '@/lib/ai/identity-profile';
 import type { Checkin, Decision, Pattern, Scan } from '@/types';
 
 function buildExpectationGapContext(scan: Scan | null): string {
@@ -72,15 +73,19 @@ export async function POST(request: Request) {
     const patterns = (patternsRes.data ?? []) as Pattern[];
     const scan = scanRes.data ?? null;
 
-    const kbContext = await fetchFullContext();
+    const [kbContext, profileContext] = await Promise.all([
+      fetchFullContext(),
+      identityProfileContext(supabase, user.id),
+    ]);
     const gapContext = buildExpectationGapContext(scan);
+    const userContext = [gapContext, profileContext].filter(Boolean).join('\n\n');
     const prompt = WEEKLY_REPORT_PROMPT(checkins, decisions, patterns, weekStart, weekEnd);
 
     const message = await anthropic.messages.create({
       model: AI_MODEL,
       max_tokens: 512,
-      // gapContext è per-utente: secondo blocco system, fuori dal prefisso cachato
-      system: cachedKbSystem(kbContext, 'Usa il processo di trasformazione in 5 fasi e gli archetipi come sistema di lettura dei dati. Fai emergere la struttura psicologica profonda, non solo le statistiche.', gapContext),
+      // contesto per-utente (gap + profilo): secondo blocco system, fuori dal prefisso cachato
+      system: cachedKbSystem(kbContext, 'Usa il processo di trasformazione in 5 fasi e gli archetipi come sistema di lettura dei dati. Fai emergere la struttura psicologica profonda, non solo le statistiche.', userContext),
       messages: [{ role: 'user', content: prompt }],
     });
 

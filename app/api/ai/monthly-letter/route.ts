@@ -6,6 +6,7 @@ import { checkAiQuota, recordAiUsage, quotaExceededBody } from '@/lib/ai/usage';
 import { anthropic, AI_MODEL, cachedKbSystem } from '@/lib/anthropic/client';
 import { MONTHLY_LETTER_PROMPT } from '@/lib/anthropic/prompts/monthly-letter';
 import { fetchFullContext } from '@/lib/knowledge-base/fetch';
+import { identityProfileContext } from '@/lib/ai/identity-profile';
 import type { Checkin, Decision, Pattern, Scan } from '@/types';
 
 function buildExpectationGapContext(scan: Scan | null): string {
@@ -66,15 +67,19 @@ export async function POST(request: Request) {
     const patterns = (patternsRes.data ?? []) as Pattern[];
     const scan = scanRes.data;
 
-    const kbContext = await fetchFullContext();
+    const [kbContext, profileContext] = await Promise.all([
+      fetchFullContext(),
+      identityProfileContext(supabase, user.id),
+    ]);
     const gapContext = buildExpectationGapContext(scan);
+    const userContext = [gapContext, profileContext].filter(Boolean).join('\n\n');
     const prompt = MONTHLY_LETTER_PROMPT(checkins, decisions, patterns, scan, month, year);
 
     const message = await anthropic.messages.create({
       model: AI_MODEL,
       max_tokens: 1024,
-      // gapContext è per-utente: secondo blocco system, fuori dal prefisso cachato
-      system: cachedKbSystem(kbContext, "Usa l'intera base psicologica — archetipi, loop, IFS, processo di trasformazione — per scrivere una lettera che vada in profondità. Non limitarti a riassumere i dati: rifletti l'identità.", gapContext),
+      // contesto per-utente (gap + profilo): secondo blocco system, fuori dal prefisso cachato
+      system: cachedKbSystem(kbContext, "Usa l'intera base psicologica — archetipi, loop, IFS, processo di trasformazione — per scrivere una lettera che vada in profondità. Non limitarti a riassumere i dati: rifletti l'identità.", userContext),
       messages: [{ role: 'user', content: prompt }],
     });
 

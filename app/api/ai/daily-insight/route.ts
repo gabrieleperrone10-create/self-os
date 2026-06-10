@@ -1,8 +1,9 @@
 export const maxDuration = 60;
 
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { checkAiQuota, recordAiUsage, quotaExceededBody } from '@/lib/ai/usage';
+import { identityProfileContext, maybeRefreshIdentityProfile } from '@/lib/ai/identity-profile';
 import { anthropic, AI_MODEL, cachedKbSystem } from '@/lib/anthropic/client';
 import { DAILY_INSIGHT_PROMPT } from '@/lib/anthropic/prompts/daily-insight';
 import { fetchFrameworkContext } from '@/lib/knowledge-base/fetch';
@@ -49,13 +50,16 @@ export async function POST(request: Request) {
       .order('date', { ascending: false })
       .limit(5);
 
-    const kbContext = await fetchFrameworkContext();
+    const [kbContext, profileContext] = await Promise.all([
+      fetchFrameworkContext(),
+      identityProfileContext(supabase, user.id),
+    ]);
 
     // Call Claude
     const message = await anthropic.messages.create({
       model: AI_MODEL,
       max_tokens: 512,
-      system: cachedKbSystem(kbContext, 'Usa questa base psicologica come lente invisibile — non citare mai i framework.'),
+      system: cachedKbSystem(kbContext, 'Usa questa base psicologica come lente invisibile — non citare mai i framework.', profileContext),
       messages: [
         {
           role: 'user',
@@ -65,6 +69,10 @@ export async function POST(request: Request) {
     });
 
     void recordAiUsage(supabase, user.id, 'daily-insight', AI_MODEL, message.usage);
+
+    // Dopo la risposta: rigenera il profilo identitario se ha 7+ giorni.
+    // after() garantisce l'esecuzione anche post-response su Vercel.
+    after(() => maybeRefreshIdentityProfile(supabase, user.id));
 
     const rawContent = message.content[0];
     if (rawContent.type !== 'text') throw new Error('Risposta AI non valida');

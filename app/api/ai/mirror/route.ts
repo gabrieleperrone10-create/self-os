@@ -8,6 +8,7 @@ import { MIRROR_PROMPT, type MirrorAnswers } from '@/lib/anthropic/prompts/mirro
 import { parseAIJson } from '@/lib/anthropic/parsers';
 import { mirrorAnalysisSchema } from '@/lib/anthropic/schemas';
 import { fetchFrameworkContext } from '@/lib/knowledge-base/fetch';
+import { identityProfileContext } from '@/lib/ai/identity-profile';
 import type { Decision, DecisionOrigin } from '@/types';
 
 export async function POST(request: Request) {
@@ -26,10 +27,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Risposte incomplete' }, { status: 400 });
     }
 
-    const [{ data: pastDecisions }, kbContext] = await Promise.all([
+    const [{ data: pastDecisions }, kbContext, profileContext] = await Promise.all([
       supabase.from('decisions').select('*').eq('user_id', user.id)
         .order('created_at', { ascending: false }).limit(10),
       fetchFrameworkContext(),
+      identityProfileContext(supabase, user.id),
     ]);
 
     const decisions = (pastDecisions ?? []) as Decision[];
@@ -37,7 +39,7 @@ export async function POST(request: Request) {
     const message = await anthropic.messages.create({
       model: AI_MODEL,
       max_tokens: 800,
-      system: cachedKbSystem(kbContext, 'Usa questa base come lente invisibile — non citare framework, non usare termini tecnici.'),
+      system: cachedKbSystem(kbContext, 'Usa questa base come lente invisibile — non citare framework, non usare termini tecnici.', profileContext),
       messages: [{ role: 'user', content: MIRROR_PROMPT(body, decisions) }],
     });
 

@@ -2,6 +2,7 @@ export const maxDuration = 60;
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { checkAiQuota, recordAiUsage, quotaExceededBody } from '@/lib/ai/usage';
 import { anthropic } from '@/lib/anthropic/client';
 import { SIGNAL_ANALYSIS_PROMPT } from '@/lib/anthropic/prompts/signal-analysis';
 import type { Pattern, Signal } from '@/types';
@@ -14,6 +15,9 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Non autenticato' }, { status: 401 });
+
+    const quota = await checkAiQuota(supabase, user.id);
+    if (!quota.allowed) return NextResponse.json(quotaExceededBody(quota), { status: 429 });
 
     const { signalId } = await request.json() as { signalId: string };
 
@@ -36,6 +40,8 @@ export async function POST(request: Request) {
       max_tokens: 256,
       messages: [{ role: 'user', content: SIGNAL_ANALYSIS_PROMPT(signal, patterns, recentSignals) }],
     });
+
+    void recordAiUsage(supabase, user.id, 'analyze-signal', MODEL, message.usage);
 
     const raw = message.content[0];
     if (raw.type !== 'text') throw new Error('Risposta non valida');

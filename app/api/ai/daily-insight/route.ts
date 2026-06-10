@@ -2,6 +2,7 @@ export const maxDuration = 60;
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { checkAiQuota, recordAiUsage, quotaExceededBody } from '@/lib/ai/usage';
 import { anthropic, AI_MODEL, cachedKbSystem } from '@/lib/anthropic/client';
 import { DAILY_INSIGHT_PROMPT } from '@/lib/anthropic/prompts/daily-insight';
 import { fetchFrameworkContext } from '@/lib/knowledge-base/fetch';
@@ -15,6 +16,9 @@ export async function POST(request: Request) {
     if (!user) {
       return NextResponse.json({ error: 'Non autenticato' }, { status: 401 });
     }
+
+    const quota = await checkAiQuota(supabase, user.id);
+    if (!quota.allowed) return NextResponse.json(quotaExceededBody(quota), { status: 429 });
 
     const body = await request.json() as { checkinId: string };
     const { checkinId } = body;
@@ -59,6 +63,8 @@ export async function POST(request: Request) {
         },
       ],
     });
+
+    void recordAiUsage(supabase, user.id, 'daily-insight', AI_MODEL, message.usage);
 
     const rawContent = message.content[0];
     if (rawContent.type !== 'text') throw new Error('Risposta AI non valida');

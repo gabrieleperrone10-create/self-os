@@ -2,6 +2,7 @@ export const maxDuration = 60;
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { checkAiQuota, recordAiUsage, quotaExceededBody } from '@/lib/ai/usage';
 import { anthropic, AI_MODEL, cachedKbSystem } from '@/lib/anthropic/client';
 import { WEEKLY_REPORT_PROMPT } from '@/lib/anthropic/prompts/weekly-report';
 import { fetchFullContext } from '@/lib/knowledge-base/fetch';
@@ -20,6 +21,9 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Non autenticato' }, { status: 401 });
+
+    const quota = await checkAiQuota(supabase, user.id);
+    if (!quota.allowed) return NextResponse.json(quotaExceededBody(quota), { status: 429 });
 
     // Default to current week if not provided
     const body = await request.json() as { weekStart?: string; weekEnd?: string };
@@ -79,6 +83,8 @@ export async function POST(request: Request) {
       system: cachedKbSystem(kbContext, 'Usa il processo di trasformazione in 5 fasi e gli archetipi come sistema di lettura dei dati. Fai emergere la struttura psicologica profonda, non solo le statistiche.', gapContext),
       messages: [{ role: 'user', content: prompt }],
     });
+
+    void recordAiUsage(supabase, user.id, 'weekly-report', AI_MODEL, message.usage);
 
     const text = message.content[0];
     if (text.type !== 'text') throw new Error('Risposta non valida');

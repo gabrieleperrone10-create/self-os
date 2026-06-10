@@ -2,6 +2,7 @@ export const maxDuration = 60;
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { checkAiQuota, recordAiUsage, quotaExceededBody } from '@/lib/ai/usage';
 import { anthropic } from '@/lib/anthropic/client';
 import { EXPERIMENT_GENERATOR_PROMPT } from '@/lib/anthropic/prompts/experiment-generator';
 import { parseAIJson } from '@/lib/anthropic/parsers';
@@ -16,6 +17,9 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Non autenticato' }, { status: 401 });
+
+    const quota = await checkAiQuota(supabase, user.id);
+    if (!quota.allowed) return NextResponse.json(quotaExceededBody(quota), { status: 429 });
 
     const body = await request.json() as {
       type: 'pattern' | 'freeform';
@@ -60,6 +64,8 @@ export async function POST(request: Request) {
       max_tokens: 2048,
       messages: [{ role: 'user', content: prompt }],
     });
+
+    void recordAiUsage(supabase, user.id, 'generate-experiment', MODEL, message.usage);
 
     const raw = message.content[0];
     if (raw.type !== 'text') throw new Error('Risposta AI non valida');

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import type { Signal } from '@/types';
 
 // ─── Formatting ───────────────────────────────────────────────────────────────
@@ -85,6 +86,16 @@ function SignalCard({ signal, isNew = false }: { signal: Signal; isNew?: boolean
           Analisi in corso...
         </p>
       )}
+
+      {/* Ingresso a basso attrito nel Mirror: il segnale diventa la decisione */}
+      <div style={{ marginTop: '0.75rem', textAlign: 'right' }}>
+        <Link
+          href={`/mirror?seed=${encodeURIComponent(signal.content)}`}
+          style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textDecoration: 'none', letterSpacing: '0.04em' }}
+        >
+          C&apos;è una decisione qui dentro? Portala al Mirror →
+        </Link>
+      </div>
     </div>
   );
 }

@@ -129,6 +129,20 @@ export default async function DashboardPage() {
         </div>
       )}
 
+      {/* Nudge esiti Mirror: decisioni aperte da 30+ giorni */}
+      {(() => {
+        const cutoff = Date.now() - 30 * 86400000;
+        const openOld = decisions.filter(d => !d.outcome && new Date(d.created_at).getTime() < cutoff).length;
+        if (openOld === 0) return null;
+        return (
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '2rem' }}>
+            {openOld === 1 ? 'Una decisione nel Mirror è aperta' : `${openOld} decisioni nel Mirror sono aperte`} da
+            più di 30 giorni senza esito.{' '}
+            <a href="/mirror" style={{ color: 'var(--gold)', textDecoration: 'none' }}>Registralo →</a>
+          </p>
+        );
+      })()}
+
       {/* Onboarding progress */}
       {!onboardingDone && (
         <div

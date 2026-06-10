@@ -76,10 +76,21 @@ const MIRROR_QUESTIONS: MirrorQuestion[] = [
 
 type Step = 'q' | 'loading' | 'result';
 
-export default function MirrorClient() {
+export default function MirrorClient({
+  seed,
+  openDecisionsCount = 0,
+}: {
+  seed?: string;
+  openDecisionsCount?: number;
+}) {
   const [step, setStep] = useState<Step>('q');
   const [currentQ, setCurrentQ] = useState(0);
-  const [answers, setAnswers] = useState<Partial<MirrorAnswers>>({ body_score: 5, clarity_score: 5 });
+  // seed: ingresso a basso attrito da un segnale — precompila la decisione
+  const [answers, setAnswers] = useState<Partial<MirrorAnswers>>({
+    body_score: 5,
+    clarity_score: 5,
+    ...(seed ? { decisione: seed } : {}),
+  });
   const [analysis, setAnalysis] = useState<MirrorAnalysis | null>(null);
   const [decisionId, setDecisionId] = useState<string | null>(null);
   const [outcome, setOutcome] = useState('');
@@ -190,6 +201,22 @@ export default function MirrorClient() {
           Il Mirror non consiglia. Riflette chi stai essendo mentre decidi.
         </p>
       </div>
+
+      {/* Nudge esiti: le decisioni senza esito sono intenzioni, non evidenza */}
+      {openDecisionsCount > 0 && step === 'q' && currentQ === 0 && (
+        <div style={{
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          borderLeft: '2px solid var(--credenze)', borderRadius: '3px',
+          padding: '1rem 1.5rem', marginBottom: '2.5rem', maxWidth: '580px',
+        }}>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>
+            {openDecisionsCount === 1
+              ? 'Hai una decisione aperta da più di 30 giorni senza esito.'
+              : `Hai ${openDecisionsCount} decisioni aperte da più di 30 giorni senza esito.`}
+            {' '}L&apos;esito è ciò che trasforma un&apos;intenzione in evidenza — lo trovi nel diario qui sotto.
+          </p>
+        </div>
+      )}
 
       {/* Question flow */}
       {(step === 'q' || step === 'loading') && (

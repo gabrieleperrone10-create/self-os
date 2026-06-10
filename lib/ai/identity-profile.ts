@@ -64,6 +64,15 @@ function buildScanSummary(scan: Scan | null): string {
 }
 
 /**
+ * Cintura di sicurezza oltre al prompt: se il modello antepone comunque
+ * un titolo/intestazione, taglia tutto fino alla prima sezione attesa.
+ */
+function stripPreamble(text: string): string {
+  const idx = text.search(/\*{0,2}CHI STAI ESSENDO/);
+  return idx > 0 ? text.slice(idx) : text;
+}
+
+/**
  * Genera (o aggiorna) il profilo identitario. Ritorna il nuovo profilo,
  * o null se i dati non bastano. Errori loggati, mai propagati al chiamante
  * sul percorso di risposta.
@@ -116,7 +125,7 @@ export async function generateIdentityProfile(
     .insert({
       user_id: userId,
       version: (previous?.version ?? 0) + 1,
-      profile_text: text.text.trim(),
+      profile_text: stripPreamble(text.text.trim()),
       source_counts: {
         checkins: checkins.length,
         decisions: decisions.length,

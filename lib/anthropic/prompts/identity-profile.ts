@@ -42,5 +42,7 @@ Cosa è cambiato rispetto al profilo precedente (o allo scan, se è la prima ver
 LA TENSIONE CENTRALE
 Una sola tensione: tra chi stai essendo e chi dici di voler diventare. Una frase chirurgica, non un giudizio.
 
-Rispondi SOLO con il profilo. Nessuna premessa, nessun commento.
+Rispondi SOLO con il profilo: la prima riga DEVE essere "CHI STAI ESSENDO".
+Nessun titolo generale, nessuna intestazione markdown (#), nessun separatore (---),
+nessuna premessa, nessun commento.
 `;

@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 
-export type KBCategory = 'archetype' | 'framework' | 'process' | 'wheel_of_life' | 'glossary';
+export type KBCategory =
+  | 'archetype' | 'framework' | 'process' | 'wheel_of_life' | 'glossary'
+  | 'mechanism' | 'safety' | 'epistemic';
 
 interface KBEntry {
   title: string;
@@ -36,23 +38,40 @@ export async function fetchKBContext(categories: KBCategory[]): Promise<string> 
   return `=== BASE PSICOLOGICA SELF OS ===\n\n${sections}\n\n=== FINE BASE PSICOLOGICA ===`;
 }
 
+// Il contratto epistemico viaggia con OGNI contesto: è la voce del sistema.
+
 /**
- * Fetches only the archetypes context (all 12) — for scan analysis and pattern recognition.
+ * Archetypes context (le 12 firme + regola d'uso) — for scan analysis and pattern recognition.
  */
 export async function fetchArchetypesContext(): Promise<string> {
-  return fetchKBContext(['archetype']);
+  return fetchKBContext(['archetype', 'epistemic']);
 }
 
 /**
- * Fetches frameworks + process context — for mirror and outcome reflection.
+ * Frameworks + meccanismi evidence-based — for mirror and outcome reflection.
  */
 export async function fetchFrameworkContext(): Promise<string> {
-  return fetchKBContext(['framework', 'process']);
+  return fetchKBContext(['framework', 'process', 'mechanism', 'epistemic']);
 }
 
 /**
- * Fetches full context (all categories) — for monthly letter and weekly report.
+ * Contesto per il check-in quotidiano: include il protocollo safety
+ * (stati bassi, ruminazione) oltre a framework e meccanismi.
+ */
+export async function fetchDailyContext(): Promise<string> {
+  return fetchKBContext(['framework', 'process', 'mechanism', 'epistemic', 'safety']);
+}
+
+/**
+ * Contesto minimo per la cattura rapida (Haiku): safety + voce.
+ */
+export async function fetchSafetyContext(): Promise<string> {
+  return fetchKBContext(['safety', 'epistemic']);
+}
+
+/**
+ * Full context — for monthly letter and weekly report.
  */
 export async function fetchFullContext(): Promise<string> {
-  return fetchKBContext(['archetype', 'framework', 'process', 'wheel_of_life']);
+  return fetchKBContext(['archetype', 'framework', 'process', 'wheel_of_life', 'mechanism', 'epistemic']);
 }

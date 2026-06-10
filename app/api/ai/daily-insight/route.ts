@@ -6,7 +6,7 @@ import { checkAiQuota, recordAiUsage, quotaExceededBody } from '@/lib/ai/usage';
 import { identityProfileContext, maybeRefreshIdentityProfile } from '@/lib/ai/identity-profile';
 import { anthropic, AI_MODEL, cachedKbSystem } from '@/lib/anthropic/client';
 import { DAILY_INSIGHT_PROMPT } from '@/lib/anthropic/prompts/daily-insight';
-import { fetchFrameworkContext } from '@/lib/knowledge-base/fetch';
+import { fetchDailyContext } from '@/lib/knowledge-base/fetch';
 import type { Checkin } from '@/types';
 
 export async function POST(request: Request) {
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       .limit(5);
 
     const [kbContext, profileContext] = await Promise.all([
-      fetchFrameworkContext(),
+      fetchDailyContext(),
       identityProfileContext(supabase, user.id),
     ]);
 

@@ -3,8 +3,9 @@ export const maxDuration = 60;
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { checkAiQuota, recordAiUsage, quotaExceededBody } from '@/lib/ai/usage';
-import { anthropic } from '@/lib/anthropic/client';
+import { anthropic, cachedKbSystem } from '@/lib/anthropic/client';
 import { SIGNAL_ANALYSIS_PROMPT } from '@/lib/anthropic/prompts/signal-analysis';
+import { fetchSafetyContext } from '@/lib/knowledge-base/fetch';
 import type { Pattern, Signal } from '@/types';
 
 // Haiku — risposta breve, non serve ragionamento profondo
@@ -35,9 +36,12 @@ export async function POST(request: Request) {
     const patterns = (patternsRes.data ?? []) as Pick<Pattern, 'title' | 'type' | 'frequency'>[];
     const recentSignals = (recentRes.data ?? []) as Pick<Signal, 'content' | 'created_at'>[];
 
+    const kbContext = await fetchSafetyContext();
+
     const message = await anthropic.messages.create({
       model: MODEL,
       max_tokens: 256,
+      system: cachedKbSystem(kbContext, 'Rispetta il contratto epistemico e il protocollo safety: se il segnale mostra distress, la priorità è la persona, non il pattern.'),
       messages: [{ role: 'user', content: SIGNAL_ANALYSIS_PROMPT(signal, patterns, recentSignals) }],
     });
 

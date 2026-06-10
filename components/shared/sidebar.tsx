@@ -20,6 +20,7 @@ import {
   Footprints,
   Menu,
   X,
+  Shield,
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 
@@ -130,6 +131,11 @@ export function Sidebar() {
           {/* Coach — only for coach role */}
           {(role === 'coach' || role === 'admin') && (
             <NavLink href="/coach" label="Clienti" icon={<Users size={16} strokeWidth={1.5} />} active={isActive('/coach')} />
+          )}
+
+          {/* Admin — only for admin role */}
+          {role === 'admin' && (
+            <NavLink href="/admin" label="Admin" icon={<Shield size={16} strokeWidth={1.5} />} active={isActive('/admin')} />
           )}
         </nav>
 

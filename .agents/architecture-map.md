@@ -53,11 +53,28 @@ successo**: la voce `/lab` (icona `FlaskConical`) era mescolata con `/segnali`
 (icona `Zap`) nello stesso diff.
 
 **Stato attuale (verificare se ancora vero prima di assumere):**
-- `mainNav`: Dashboard, Check-in, Identity Map, Mirror, Segnali, Lettere
-- `mobileBottomNav`: Home, Check-in, Mappa, Mirror, Segnali
-- `/lab` **non è presente** in nessuna delle due — la feature lab esiste nel
-  codice (`app/(app)/lab/`) ma non è ancora collegata alla navigazione
-  (probabilmente perché non ancora pronta per produzione).
+- `mainNav`: Dashboard, Check-in, Identity Map, Distanza, Mirror, Lab,
+  Segnali, Lettere — più "Scan iniziale" sempre visibile, "Clienti"
+  (`/coach`) per ruolo `coach`/`admin`, "Admin" (`/admin`, icona `Shield`)
+  solo per `admin` (aggiunto sessione 2026-06-10 sera, vedi §2.9)
+
+**Gap trovato e fixato 2026-06-11:** quando è stata aggiunta la voce
+"Clienti" per `role === 'admin'`, il gate di accesso in
+`app/(app)/coach/page.tsx` (`if (profile?.role !== 'coach' && profile?.plan
+!== 'coach') redirect('/settings')`) non è stato aggiornato — un admin che
+clicca "Clienti" veniva rediretto a `/settings` senza accorgersene. Fix:
+aggiunto `&& profile?.role !== 'admin'` alla condizione. Per un admin senza
+righe in `coach_clients` come coach, `/coach` mostra ora correttamente lo
+stato vuoto ("Nessun cliente attivo ancora") + il proprio invite link — è
+atteso, non un bug residuo. **Pattern da ricontrollare:** ogni volta che si
+aggiunge `role === 'admin'` a una condizione di visibilità in
+`sidebar.tsx`, controllare se la pagina di destinazione ha un proprio gate
+che va allineato allo stesso modo (`/coach/[clientId]` non ha gate di ruolo,
+si basa solo sull'esistenza della riga `coach_clients` + RLS, quindi per un
+admin senza relazioni resterebbe `notFound()` — accettabile finché l'admin
+usa `/admin/users/[id]` per il dettaglio).
+- `mobileBottomNav`: Home, Check-in, Mirror, Lab, Segnali — `/admin` non è
+  presente qui (raggiungibile solo da desktop o overlay mobile via hamburger)
 
 **Regola:** prima di aggiungere una voce, leggi l'intero file — non fare diff
 parziali al buio.
@@ -151,6 +168,62 @@ anche `daily-insight.ts` (`4fef73d`).
   `list_deployments`/build logs) — un push "verde" in locale non significa
   build verde su Vercel.
 
+### 2.9 Admin RLS (`010_admin_read_all.sql` + `011_fix_admin_rls_recursion.sql`) + `/admin/**`
+**È:** policy `admin_reads_all_<tabella>` (FOR SELECT, `is_admin()`) su
+profiles/checkins/scans/patterns/decisions/ai_usage — stesso pattern di
+`coach_sees_client_*` ma senza vincolo `coach_clients`/`status = 'active'`:
+un admin vede tutto in sola lettura.
+
+**⚠ INCIDENTE 2026-06-11 (lettura dati rotta per tutti gli utenti):** la 010
+originale usava `EXISTS (SELECT 1 FROM profiles p WHERE p.id = auth.uid()
+AND p.role = 'admin')` come policy SU `profiles` stessa. Postgres rileva
+questo come **ricorsione infinita** (42P17) — non solo per l'admin: la
+policy viene valutata per OGNI SELECT su `profiles` (e a cascata su
+checkins/scans/patterns/decisions/ai_usage, le cui policy admin fanno
+subquery su `profiles`), per QUALSIASI utente. Il codice è fail-open ovunque
+→ effetto osservato: dashboard e risultati scan "vuoti" per l'utente normale,
+senza errori visibili, subito dopo aver applicato 010 + impostato il proprio
+ruolo `admin`.
+
+**Fix (011):** funzione `is_admin()` `SECURITY DEFINER SET search_path =
+public` che fa la stessa query ma bypassa RLS su `profiles` (esegue come
+proprietario tabella) → nessuna ricorsione. Le 6 policy sono state droppate
+e ricreate con `USING (is_admin())`.
+
+**Lezione generale:** mai mettere una subquery sulla STESSA tabella dentro
+una policy RLS, anche se "sembra" terminare per altre policy permissive —
+Postgres valuta tutte le policy permissive della subquery, non solo quella
+che farebbe terminare la valutazione. Usare sempre una funzione
+`SECURITY DEFINER` per check di ruolo self-referenziali.
+
+**Usato da:** `app/(app)/admin/layout.tsx` (gate `role === 'admin'`,
+redirect a `/dashboard` altrimenti), `app/(app)/admin/page.tsx` (overview:
+signup, attivazione/scan, engagement 7gg, utenti a rischio, uso AI
+aggregato per route + top utenti), `app/(app)/admin/users/page.tsx`
+(tabella di tutti gli utenti con stato attivo/a rischio/non attivato),
+`app/(app)/admin/users/[id]/page.tsx` (dettaglio singolo utente — stessa
+struttura di `/coach/[clientId]`, senza note coach, con sezione uso AI).
+
+**⚠ Se la migrazione 010 non è applicata al DB live:** `/admin` non crasha,
+ma mostra dati incompleti/fuorvianti — l'admin vede SOLO la propria riga
+(via `profiles_own_data`), quindi "1 utente totale" anche se ce ne sono
+molti di più. Prima di fidarsi dei numeri in `/admin`, verifica che 010 sia
+applicata E che `profiles.role = 'admin'` sia impostato sul proprio utente
+(comando in fondo alla migrazione).
+
+**Gap scoperto in questa sessione (non risolto per i coach):** la tabella
+`decisions` non ha mai avuto una policy `coach_sees_client_decisions`
+(manca dalla 001) — `/coach/[clientId]` interroga `decisions` ma RLS la
+filtra a vuoto per il coach. `admin_reads_all_decisions` (010) risolve
+questo SOLO per l'admin. Se in futuro la sezione "Decisioni recenti" del
+coach detail risulta sempre vuota, è questo il motivo.
+
+**Nuove classi mobile** (`app/globals.css`, vedi §5.5): `.admin-metrics-grid`
+(4→2 col) e `.admin-detail-grid` (2→1 col) — stesso pattern di
+`.identity-charts-grid`/`.letters-layout`. NON riusare `.identity-charts-grid`
+per altri layout: ha base `grid-template-columns: 1fr 320px`, specifica per
+il grafico+radar di identity-map.
+
 ---
 
 ## 3. Tabelle Supabase — chi le tocca
@@ -208,6 +281,16 @@ applicato al DB live (non solo il file più alto nella cartella, perché
 potrebbero essercene di non applicate), e usa il numero successivo libero
 (→ **006** al momento di scrivere).
 
+**2026-06-10 (sera):** aggiunta `010_admin_read_all.sql` (policy RLS
+read-all `role='admin'` per il pannello `/admin`, vedi §2.9). ⚠ **da
+applicare al DB live via SQL Editor**, insieme allo `UPDATE profiles SET
+role = 'admin' WHERE email = '...'` commentato in fondo al file.
+
+**2026-06-11:** aggiunta `011_fix_admin_rls_recursion.sql` — fix urgente per
+ricorsione infinita introdotta da 010 (vedi §2.9, incidente). **Da applicare
+al DB live SUBITO dopo 010** (o subito, se 010 è già applicata — è proprio
+questo il caso del DB live). Prossimo numero libero: **012**.
+
 ---
 
 ## 5. Pattern ricorrenti (così non li reinventi diversi ogni volta)
@@ -258,6 +341,10 @@ mobile vivono come classi dedicate in `app/globals.css`, applicate via
 - `.page-title-responsive` — h1 con font-size ridotto su mobile
 - `.checkin-grid` — **definita ma NON ancora usata** (dead code) — pensata
   per dashboard/page.tsx ma non applicata; o usarla o rimuoverla
+- `.admin-metrics-grid` — griglia 4 metriche admin/users/[id], 4→2 col su
+  mobile
+- `.admin-detail-grid` — decisioni/pattern affiancati admin/users/[id],
+  2→1 col su mobile
 - regole globali in `@media (max-width: 768px)`: `.app-main h1` (1.6rem),
   `.app-main textarea` (min-height 100px), `.app-main .btn-full-mobile`
   (width 100%)
@@ -275,6 +362,7 @@ nuovo.
 |---|---|---|---|---|
 | Segnali | `app/(app)/segnali`, `app/api/signals`, `app/api/ai/analyze-signal` | ✅ sì | `signals` | In produzione (deploy `141f19e`, 2026-06-08) |
 | Lab/Experiments | `app/(app)/lab`, `app/api/experiments`, `app/api/ai/generate-experiment` | ✅ sì | `experiments`, `experiment_entries` | In produzione (deploy `232a87e`, 2026-06-09). Voce `/lab` in `mainNav` e in `mobileBottomNav` (al posto di `/identity-map`, che resta solo nel sidebar desktop) |
+| Admin panel | `app/(app)/admin/**`, `supabase/migrations/010_admin_read_all.sql` | ✅ sì (solo `role='admin'`) | profiles, checkins, scans, patterns, decisions, ai_usage (read-all via RLS, vedi §2.9) | Overview prodotto + tabella utenti + dettaglio per utente. Richiede 010 applicata al DB live + `role='admin'` sul proprio profilo (sessione 2026-06-10 sera) |
 
 **Stato deploy produzione (verificare prima di assumere "deployato" = "live"):**
 dopo `232a87e` i 3 commit successivi (`e8215821` maxDuration,

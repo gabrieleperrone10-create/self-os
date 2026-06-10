@@ -532,6 +532,22 @@ input[type="range"]::-moz-range-thumb {
   margin-bottom: 3rem;
 }
 
+/* Admin — metriche utente, 4→2 col */
+.admin-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  max-width: 720px;
+}
+
+/* Admin — decisioni/pattern affiancati, 2→1 col */
+.admin-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  max-width: 920px;
+}
+
 /* Mirror — result card paura/visione */
 .mirror-fear-card { display: flex; gap: 1.5rem; align-items: center; }
 .mirror-fear-stats { display: flex; gap: 2rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
@@ -561,6 +577,10 @@ input[type="range"]::-moz-range-thumb {
 
   /* Identity map charts: 1 colonna su mobile */
   .identity-charts-grid { grid-template-columns: 1fr; }
+
+  /* Admin: metriche 4→2 col, dettaglio decisioni/pattern 2→1 col */
+  .admin-metrics-grid { grid-template-columns: repeat(2, 1fr); }
+  .admin-detail-grid { grid-template-columns: 1fr; }
 
   /* Letters: sidebar sopra, lettera sotto */
   .letters-layout { grid-template-columns: 1fr; gap: 1.5rem; }

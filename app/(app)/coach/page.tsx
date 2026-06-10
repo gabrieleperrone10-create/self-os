@@ -24,7 +24,7 @@ export default async function CoachPage() {
     .eq('id', user.id)
     .single<Profile>();
 
-  if (profile?.role !== 'coach' && profile?.plan !== 'coach') {
+  if (profile?.role !== 'coach' && profile?.role !== 'admin' && profile?.plan !== 'coach') {
     redirect('/settings');
   }
 

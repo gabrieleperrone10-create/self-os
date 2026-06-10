@@ -17,6 +17,7 @@ import {
   BookOpen,
   FlaskConical,
   Zap,
+  Footprints,
   Menu,
   X,
 } from 'lucide-react';
@@ -26,6 +27,7 @@ const mainNav = [
   { href: '/dashboard',    label: 'Dashboard',     icon: LayoutDashboard },
   { href: '/checkin',      label: 'Check-in',      icon: CalendarCheck },
   { href: '/identity-map', label: 'Identity Map',  icon: Map },
+  { href: '/distanza',     label: 'Distanza',      icon: Footprints },
   { href: '/mirror',       label: 'Mirror',        icon: GitFork },
   { href: '/lab',          label: 'Lab',           icon: FlaskConical },
   { href: '/segnali',      label: 'Segnali',       icon: Zap },

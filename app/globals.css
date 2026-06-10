@@ -584,3 +584,10 @@ input[type="range"]::-moz-range-thumb {
 .card-hover:hover {
   border-color: var(--gold) !important;
 }
+
+/* Distanza — confronto profili affiancati, stack su mobile */
+@media (max-width: 768px) {
+  .distanza-grid {
+    grid-template-columns: 1fr !important;
+  }
+}

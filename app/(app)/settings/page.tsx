@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import type { Profile } from '@/types';
 import { PLANS } from '@/lib/stripe/plans';
 import { SettingsActions } from './actions';
+import { DataSection } from './data-section';
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -118,6 +119,9 @@ export default async function SettingsPage() {
           <SettingsActions plan={currentPlan} hasBilling={true} currentPlan={currentPlan} portalOnly />
         </div>
       )}
+
+      {/* Notifiche + dati (GDPR) */}
+      <DataSection emailReminders={(profile as unknown as { email_reminders?: boolean })?.email_reminders !== false} />
     </div>
   );
 }

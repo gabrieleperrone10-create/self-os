@@ -30,10 +30,21 @@ export async function POST(request: NextRequest) {
 
     if (!conn) return NextResponse.json({ error: 'Token non valido' }, { status: 401 });
 
-    const body = await request.json() as IngestPayload;
-    const metrics = body?.data?.metrics;
-    if (!Array.isArray(metrics)) {
-      return NextResponse.json({ error: 'Formato non valido — atteso { data: { metrics: [...] } }' }, { status: 400 });
+    const body = await request.json() as Record<string, unknown>;
+
+    // Health Auto Export v2 può mandare { data: { metrics } } oppure { metrics } direttamente
+    const dataBlock = (body?.data ?? body) as Record<string, unknown>;
+    const metrics = Array.isArray(dataBlock?.metrics) ? dataBlock.metrics as Metric[] : null;
+
+    // Log temporaneo per debug struttura payload
+    console.log('[biometrics/ingest] keys:', Object.keys(body));
+    console.log('[biometrics/ingest] dataBlock keys:', Object.keys(dataBlock));
+    console.log('[biometrics/ingest] metrics count:', metrics?.length ?? 'non trovato');
+    if (metrics?.[0]) console.log('[biometrics/ingest] sample metric:', JSON.stringify(metrics[0]).slice(0, 200));
+
+    if (!metrics) {
+      console.error('[biometrics/ingest] formato non riconosciuto:', JSON.stringify(body).slice(0, 500));
+      return NextResponse.json({ error: 'Formato non valido', received_keys: Object.keys(body) }, { status: 400 });
     }
 
     const rows: Array<{

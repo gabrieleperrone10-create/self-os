@@ -7,12 +7,17 @@ type MetricPoint = { date: string; qty: number };
 type Metric = { name: string; units: string; data: MetricPoint[] };
 type IngestPayload = { data: { metrics: Metric[] } };
 
-// Chiamato da Health Auto Export su iPhone (nessuna sessione browser)
-// Auth via Bearer token generato da /api/biometrics/token
+// Chiamato da Health Auto Export su iPhone (nessuna sessione browser).
+// Accetta il token in tre forme per compatibilità con l'app:
+//   Authorization: Bearer TOKEN
+//   Authorization: TOKEN
+//   ?key=TOKEN  (query param)
 export async function POST(request: NextRequest) {
   try {
     const auth = request.headers.get('Authorization') ?? '';
-    const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+    const fromHeader = auth.startsWith('Bearer ') ? auth.slice(7).trim() : auth.trim();
+    const fromQuery  = new URL(request.url).searchParams.get('key') ?? '';
+    const token      = fromHeader || fromQuery;
     if (!token) return NextResponse.json({ error: 'Token mancante' }, { status: 401 });
 
     const supabase = createAdminClient();

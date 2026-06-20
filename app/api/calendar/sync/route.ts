@@ -2,7 +2,9 @@ export const maxDuration = 60;
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { fetchAndParseIcs } from '@/lib/calendar/ics';
+import { fetchAndParseIcs, type ParsedEvent } from '@/lib/calendar/ics';
+
+type SyncRow = ParsedEvent & { user_id: string };
 
 export async function POST() {
   try {
@@ -29,7 +31,7 @@ export async function POST() {
 
     // Deduplicazione per external_id: eventi ricorrenti possono avere lo stesso UID
     // nel batch → PostgreSQL rifiuta l'upsert. Teniamo l'occorrenza con start_at più recente.
-    const seen = new Map<string, typeof rows[number]>();
+    const seen = new Map<string, SyncRow>();
     for (const e of events) {
       if (e.start_at < past || e.start_at > future) continue;
       const row = { ...e, user_id: user.id };

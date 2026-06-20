@@ -15,9 +15,13 @@ type IngestPayload = { data: { metrics: Metric[] } };
 export async function POST(request: NextRequest) {
   try {
     const auth = request.headers.get('Authorization') ?? '';
-    const fromHeader = auth.startsWith('Bearer ') ? auth.slice(7).trim() : auth.trim();
+    const fromHeader = auth.toLowerCase().startsWith('bearer ') ? auth.slice(7).trim() : auth.trim();
     const fromQuery  = new URL(request.url).searchParams.get('key') ?? '';
     const token      = fromHeader || fromQuery;
+
+    console.log('[biometrics/ingest] auth header:', JSON.stringify(auth));
+    console.log('[biometrics/ingest] token extracted:', JSON.stringify(token));
+
     if (!token) return NextResponse.json({ error: 'Token mancante' }, { status: 401 });
 
     const supabase = createAdminClient();
@@ -28,7 +32,10 @@ export async function POST(request: NextRequest) {
       .eq('ingest_token', token)
       .maybeSingle();
 
-    if (!conn) return NextResponse.json({ error: 'Token non valido' }, { status: 401 });
+    if (!conn) {
+      console.error('[biometrics/ingest] token non trovato nel DB:', JSON.stringify(token));
+      return NextResponse.json({ error: 'Token non valido' }, { status: 401 });
+    }
 
     const body = await request.json() as Record<string, unknown>;
 

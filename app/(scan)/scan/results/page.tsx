@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { getViewContext } from '@/lib/supabase/view-context';
 import type { Scan } from '@/types';
 import type { ScanReport } from '@/types/scan';
 import ResultsClient from './results-client';
@@ -18,25 +19,46 @@ function extractRadarScores(answers: Record<string, unknown>): number[] {
   });
 }
 
+function NoCompatibleResults() {
+  return (
+    <div style={{
+      background: 'var(--surface)', border: '1px solid var(--border)',
+      borderRadius: '4px', padding: '2.5rem', maxWidth: '480px',
+      textAlign: 'center',
+    }}>
+      <p style={{ fontFamily: 'var(--font-playfair), Georgia, serif', fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '0.75rem' }}>
+        Nessun risultato compatibile per questo utente.
+      </p>
+      <p style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.7 }}>
+        Lo scan non è stato completato, oppure è in un formato non più supportato.
+      </p>
+    </div>
+  );
+}
+
 export default async function ScanResultsPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) redirect('/login');
+  const viewContext = await getViewContext(supabase);
+  if (!viewContext) redirect('/login');
+  const { viewUserId, isImpersonating } = viewContext;
 
   const { data: scan } = await supabase
     .from('scans')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', viewUserId)
     .order('completed_at', { ascending: false })
     .limit(1)
     .single<Scan>();
 
-  if (!scan?.analysis) redirect('/scan');
+  if (!scan?.analysis) {
+    if (isImpersonating) return <NoCompatibleResults />;
+    redirect('/scan');
+  }
 
   // Detect old scan format (pre-redesign: had shadow_pattern instead of archetype_primary)
   const analysisRaw = scan.analysis as unknown as Record<string, unknown>;
   if (!analysisRaw.archetype_primary) {
+    if (isImpersonating) return <NoCompatibleResults />;
     // Delete the incompatible scan so the user can retake it
     await supabase.from('scans').delete().eq('id', scan.id);
     redirect('/scan');

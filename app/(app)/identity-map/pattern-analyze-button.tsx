@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-export function PatternAnalyzeButton({ hasEnoughData }: { hasEnoughData: boolean }) {
+export function PatternAnalyzeButton({ hasEnoughData, disabled }: { hasEnoughData: boolean; disabled?: boolean }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const enabled = hasEnoughData && !disabled;
 
   async function analyze() {
-    if (!hasEnoughData || loading) return;
+    if (!enabled || loading) return;
     setLoading(true);
     setError(null);
 
@@ -32,17 +33,17 @@ export function PatternAnalyzeButton({ hasEnoughData }: { hasEnoughData: boolean
       )}
       <button
         onClick={analyze}
-        disabled={!hasEnoughData || loading}
+        disabled={!enabled || loading}
         style={{
           padding: '0.4rem 0.875rem',
           background: 'transparent',
-          border: `1px solid ${hasEnoughData ? 'var(--gold)' : 'var(--border)'}`,
+          border: `1px solid ${enabled ? 'var(--gold)' : 'var(--border)'}`,
           borderRadius: '3px',
-          color: hasEnoughData ? 'var(--gold)' : 'var(--text-muted)',
+          color: enabled ? 'var(--gold)' : 'var(--text-muted)',
           fontFamily: 'Georgia, serif',
           fontSize: '0.75rem',
           letterSpacing: '0.05em',
-          cursor: hasEnoughData && !loading ? 'pointer' : 'not-allowed',
+          cursor: enabled && !loading ? 'pointer' : 'not-allowed',
           opacity: loading ? 0.6 : 1,
           transition: 'all 0.3s ease',
         }}

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { DecisionJournal } from './decision-journal';
+import { useViewAs } from '@/components/shared/view-as-context';
 import type { MirrorAnswers, MirrorAnalysis } from '@/lib/anthropic/prompts/mirror';
 
 // ─── Question definitions ──────────────────────────────────────
@@ -98,6 +99,7 @@ export default function MirrorClient({
   const [error, setError] = useState<string | null>(null);
   const [visible, setVisible] = useState(true);
   const textRef = useRef<HTMLTextAreaElement>(null);
+  const { isImpersonating, viewProfile } = useViewAs();
 
   const totalQ = MIRROR_QUESTIONS.length;
   const currentQuestion = MIRROR_QUESTIONS[currentQ];
@@ -202,8 +204,21 @@ export default function MirrorClient({
         </p>
       </div>
 
+      {/* Modalità "Entra come utente": niente nuova sessione Mirror */}
+      {isImpersonating && (
+        <div style={{
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          borderLeft: '2px solid var(--gold)', borderRadius: '3px',
+          padding: '1rem 1.5rem', marginBottom: '2.5rem', maxWidth: '580px',
+        }}>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>
+            Stai visualizzando come <strong style={{ color: 'var(--gold)' }}>{viewProfile?.full_name ?? viewProfile?.email ?? 'utente'}</strong> — sola lettura. Il Mirror non è disponibile in questa modalità.
+          </p>
+        </div>
+      )}
+
       {/* Nudge esiti: le decisioni senza esito sono intenzioni, non evidenza */}
-      {openDecisionsCount > 0 && step === 'q' && currentQ === 0 && (
+      {!isImpersonating && openDecisionsCount > 0 && step === 'q' && currentQ === 0 && (
         <div style={{
           background: 'var(--surface)', border: '1px solid var(--border)',
           borderLeft: '2px solid var(--credenze)', borderRadius: '3px',
@@ -219,7 +234,7 @@ export default function MirrorClient({
       )}
 
       {/* Question flow */}
-      {(step === 'q' || step === 'loading') && (
+      {!isImpersonating && (step === 'q' || step === 'loading') && (
         <div style={{ maxWidth: '580px' }}>
           {step === 'q' && (
             <>
@@ -343,7 +358,7 @@ export default function MirrorClient({
       )}
 
       {/* Result */}
-      {step === 'result' && analysis && (
+      {!isImpersonating && step === 'result' && analysis && (
         <div style={{ maxWidth: '600px' }}>
           {/* Paura / Visione split */}
           <div className="mirror-fear-card" style={{
@@ -442,7 +457,7 @@ export default function MirrorClient({
         <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '1.3rem', fontWeight: 'normal', color: 'var(--text-primary)', marginBottom: '2rem' }}>
           Le tue decisioni passate
         </h2>
-        <DecisionJournal />
+        <DecisionJournal readOnly={isImpersonating} />
       </div>
     </div>
   );

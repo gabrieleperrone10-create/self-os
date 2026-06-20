@@ -8,11 +8,14 @@
 -- ================================================================
 
 -- 1. Nuove categorie
-ALTER TABLE public.knowledge_base DROP CONSTRAINT knowledge_base_category_check;
+ALTER TABLE public.knowledge_base DROP CONSTRAINT IF EXISTS knowledge_base_category_check;
 ALTER TABLE public.knowledge_base ADD CONSTRAINT knowledge_base_category_check
-  CHECK (category IN ('archetype','framework','process','wheel_of_life','glossary','mechanism','safety','epistemic'));
+  CHECK (category IN (
+    'archetype','framework','process','wheel_of_life',
+    'glossary','mechanism','safety','epistemic'
+  ));
 
--- 2. Rimozione dei sistemi senza supporto empirico come framework dichiarati
+-- 2. Rimozione framework senza supporto empirico
 DELETE FROM public.knowledge_base
 WHERE category = 'framework'
   AND title IN (

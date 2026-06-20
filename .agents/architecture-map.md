@@ -224,6 +224,61 @@ coach detail risulta sempre vuota, è questo il motivo.
 per altri layout: ha base `grid-template-columns: 1fr 320px`, specifica per
 il grafico+radar di identity-map.
 
+### 2.10 `lib/supabase/view-context.ts` — "Entra come utente" (admin view-as, sola lettura)
+**È:** `getViewContext(supabase)` — helper centrale che sostituisce `auth.getUser()`
+nelle pagine SSR. Legge il profilo reale; se `role === 'admin'` e il cookie httpOnly
+`impersonate_user_id` (`IMPERSONATE_COOKIE`) punta a un altro utente esistente,
+ritorna `viewUserId`/`viewProfile` di QUELL'utente con `isImpersonating: true`.
+Altrimenti contesto normale (`viewUserId === realUserId`, `viewProfile` = proprio
+profilo completo).
+
+**Usato da (SSR — sostituisce `auth.getUser()` e spesso anche la query `profiles`
+dedicata, via `viewProfile`):** `app/(app)/layout.tsx`, `app/(scan)/layout.tsx`,
+`app/(app)/dashboard/page.tsx`, `app/(app)/identity-map/page.tsx`,
+`app/(app)/distanza/page.tsx`, `app/(app)/mirror/page.tsx`, `app/(app)/lab/page.tsx`,
+`app/(app)/lab/[id]/page.tsx`, `app/(scan)/scan/results/page.tsx`,
+`app/(app)/settings/page.tsx`, `app/api/ai/weekly-report/route.ts` (unica route API
+aggiornata finora).
+
+**Componenti correlati:**
+- `app/api/admin/impersonate/route.ts` — POST imposta il cookie httpOnly
+  `impersonate_user_id` (12h, solo `role === 'admin'`), DELETE lo rimuove. Il cookie
+  vive nel browser dell'admin: ogni `fetch()` CSR verso `/api/...` lo porta con sé.
+- `components/shared/view-as-context.tsx` — `ViewAsProvider`/`useViewAs()`, popolato in
+  `(app)/layout.tsx` da `viewContext`. Usato dai client component annidati che prima
+  facevano il proprio `auth.getUser()`: `sidebar.tsx` (nasconde "Clienti"/"Admin"
+  durante impersonazione), `mirror/mirror-client.tsx`, `mirror/decision-journal.tsx`.
+- `components/shared/view-as-bar.tsx` — banner sticky in alto (impersonando) /
+  picker flottante bottom-right ricercabile (non impersonando, solo admin).
+  Renderizzato sia in `(app)/layout.tsx` che in `(scan)/layout.tsx`.
+- Migrazione `012_admin_view_as.sql` — estende `is_admin()` (da 011, vedi §2.9) con
+  policy `admin_reads_all_*` su `experiments`, `experiment_entries`,
+  `weekly_reports`, `identity_profiles` (mancanti in 011, necessarie per
+  lab/identity-map/distanza). ⚠ da applicare al DB live.
+
+**Pattern "sola lettura" durante impersonazione (`isImpersonating`):** ogni azione di
+scrittura va nascosta/disabilitata in UI, NON basta limitare l'accesso ai dati — le
+RLS admin permettono comunque scrivere sulle righe dell'utente impersonato se la UI
+non viene nascosta. Già fatto: `<VoiceCheckinCard disabled>`,
+`<PatternAnalyzeButton disabled>`, `<WeeklyReportCard readOnly>` (+ POST
+`/api/ai/weekly-report` → 403 se `isImpersonating`), wizard Mirror nascosto +
+`<DecisionJournal readOnly>`, CTA lab (`+ Nuovo esperimento`, `Segna la giornata`,
+`Genera review`) nascoste/sostituite, `<SettingsActions>`/`<DataSection>` nascosti in
+settings, ramo distruttivo "scan vecchio formato → delete+redirect" disattivato in
+`/scan/results` durante impersonazione.
+
+**Rischio noto:** ogni NUOVA pagina SSR sotto `(app)` o `(scan)` che fa una propria
+`.eq('user_id', user.id)` / `auth.getUser()` mostrerà all'admin in impersonazione i
+SUOI dati invece di quelli dell'utente scelto — usa sempre `getViewContext` +
+`viewUserId`/`viewProfile`. Se la pagina ha azioni di scrittura, nascondile con
+`isImpersonating` (server) o `useViewAs()` (client).
+
+**Fuori scope (non impersonation-aware, restano legate al REAL user):** `/checkin`,
+`/segnali`, `/letters` (CSR + proprie route API con `auth.getUser()`), `/coach`,
+`/coach/[clientId]`, `/admin/**` (nascosti dalla sidebar durante impersonazione, ma
+raggiungibili via URL diretto — mostrano sempre i dati dell'admin reale), `/scan`
+(compilazione), `/lab/new`, `/onboarding`.
+
 ---
 
 ## 3. Tabelle Supabase — chi le tocca
@@ -289,7 +344,13 @@ role = 'admin' WHERE email = '...'` commentato in fondo al file.
 **2026-06-11:** aggiunta `011_fix_admin_rls_recursion.sql` — fix urgente per
 ricorsione infinita introdotta da 010 (vedi §2.9, incidente). **Da applicare
 al DB live SUBITO dopo 010** (o subito, se 010 è già applicata — è proprio
-questo il caso del DB live). Prossimo numero libero: **012**.
+questo il caso del DB live).
+
+**2026-06-15:** aggiunta `012_admin_view_as.sql` — policy `admin_reads_all_*`
+su `experiments`/`experiment_entries`/`weekly_reports`/`identity_profiles`
+per "Entra come utente" (vedi §2.10). ⚠ **da applicare al DB live via SQL
+Editor**, insieme a 008/009 ancora pendenti (vedi memoria). Prossimo numero
+libero: **013**.
 
 ---
 
@@ -363,6 +424,7 @@ nuovo.
 | Segnali | `app/(app)/segnali`, `app/api/signals`, `app/api/ai/analyze-signal` | ✅ sì | `signals` | In produzione (deploy `141f19e`, 2026-06-08) |
 | Lab/Experiments | `app/(app)/lab`, `app/api/experiments`, `app/api/ai/generate-experiment` | ✅ sì | `experiments`, `experiment_entries` | In produzione (deploy `232a87e`, 2026-06-09). Voce `/lab` in `mainNav` e in `mobileBottomNav` (al posto di `/identity-map`, che resta solo nel sidebar desktop) |
 | Admin panel | `app/(app)/admin/**`, `supabase/migrations/010_admin_read_all.sql` | ✅ sì (solo `role='admin'`) | profiles, checkins, scans, patterns, decisions, ai_usage (read-all via RLS, vedi §2.9) | Overview prodotto + tabella utenti + dettaglio per utente. Richiede 010 applicata al DB live + `role='admin'` sul proprio profilo (sessione 2026-06-10 sera) |
+| Entra come utente (admin view-as) | `lib/supabase/view-context.ts`, `app/api/admin/impersonate`, `components/shared/view-as-*`, `supabase/migrations/012_admin_view_as.sql` | ✅ sì (banner/picker, solo `role='admin'`) | estende RLS admin (011) con 012 — nessuna nuova tabella | Sola lettura, vedi §2.10. Copre dashboard/identity-map/distanza/mirror/lab/scan-results/settings; fuori scope checkin/segnali/letters/coach/admin/scan |
 
 **Stato deploy produzione (verificare prima di assumere "deployato" = "live"):**
 dopo `232a87e` i 3 commit successivi (`e8215821` maxDuration,

@@ -605,6 +605,22 @@ input[type="range"]::-moz-range-thumb {
   border-color: var(--gold) !important;
 }
 
+/* "Entra come utente" — picker e banner admin (view-as-bar.tsx) */
+.view-as-user-row:hover {
+  background: rgba(201,169,110,0.08) !important;
+}
+
+@media (max-width: 768px) {
+  .view-as-picker {
+    bottom: 5.5rem !important; /* sopra la mobile-nav */
+    right: 1rem !important;
+  }
+
+  .mobile-menu-btn.shifted-down {
+    top: 3.5rem !important;
+  }
+}
+
 /* Distanza — confronto profili affiancati, stack su mobile */
 @media (max-width: 768px) {
   .distanza-grid {

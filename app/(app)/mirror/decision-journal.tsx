@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { useViewAs } from '@/components/shared/view-as-context';
 import type { Decision } from '@/types';
 
-export function DecisionJournal() {
+export function DecisionJournal({ readOnly }: { readOnly?: boolean }) {
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -13,16 +14,18 @@ export function DecisionJournal() {
   const [submitting, setSubmitting] = useState<string | null>(null);
 
   const supabase = createClient();
+  const { viewUserId } = useViewAs();
 
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const userId = viewUserId || user?.id;
+      if (!userId) return;
 
       const { data } = await supabase
         .from('decisions')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -30,7 +33,7 @@ export function DecisionJournal() {
       setLoading(false);
     }
     load();
-  }, [supabase]);
+  }, [supabase, viewUserId]);
 
   async function saveOutcome(decision: Decision) {
     const outcome = outcomeInputs[decision.id]?.trim();
@@ -168,6 +171,10 @@ export function DecisionJournal() {
                       </div>
                     )}
                   </div>
+                ) : readOnly ? (
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontFamily: 'Georgia, serif', lineHeight: 1.7 }}>
+                    Nessun esito registrato.
+                  </p>
                 ) : (
                   /* Outcome input */
                   <div>

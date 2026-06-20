@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import type { WeeklyReport } from '@/types';
 
-export function WeeklyReportCard() {
+export function WeeklyReportCard({ readOnly }: { readOnly?: boolean }) {
   const [report, setReport] = useState<WeeklyReport | null>(null);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,13 +51,15 @@ export function WeeklyReportCard() {
         <div>
           <p style={mutedLabel}>Report settimanale</p>
         </div>
-        <button
-          onClick={generate}
-          disabled={generating}
-          style={generateBtn}
-        >
-          {generating ? 'Generando...' : report ? 'Rigenera' : 'Genera report'}
-        </button>
+        {!readOnly && (
+          <button
+            onClick={generate}
+            disabled={generating}
+            style={generateBtn}
+          >
+            {generating ? 'Generando...' : report ? 'Rigenera' : 'Genera report'}
+          </button>
+        )}
       </div>
 
       {error && (
@@ -107,8 +109,9 @@ export function WeeklyReportCard() {
           borderRadius: '3px',
         }}>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', fontFamily: 'Georgia, serif', lineHeight: 1.7 }}>
-            Nessun report generato questa settimana.<br />
-            Clicca &quot;Genera report&quot; per ricevere una riflessione sulla tua settimana.
+            {readOnly
+              ? 'Nessun report generato per questa settimana.'
+              : <>Nessun report generato questa settimana.<br />Clicca &quot;Genera report&quot; per ricevere una riflessione sulla tua settimana.</>}
           </p>
         </div>
       )}

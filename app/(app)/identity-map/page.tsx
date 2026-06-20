@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import type { Checkin, Pattern, Scan, Profile } from '@/types';
+import { getViewContext } from '@/lib/supabase/view-context';
+import type { Checkin, Pattern, Scan } from '@/types';
 import { calculateStreak, averageStateScore } from '@/lib/utils/checkin';
 import { IdentityMapCharts } from './charts';
 import { PatternAnalyzeButton } from './pattern-analyze-button';
@@ -10,16 +11,11 @@ import { Paywall } from '@/components/shared/paywall';
 
 export default async function IdentityMapPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
+  const viewContext = await getViewContext(supabase);
+  if (!viewContext) redirect('/login');
+  const { viewUserId, viewProfile, isImpersonating } = viewContext;
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('plan')
-    .eq('id', user.id)
-    .single<Profile>();
-
-  if (!canAccess('identity_map', profile?.plan ?? 'free')) {
+  if (!canAccess('identity_map', viewProfile?.plan ?? 'free')) {
     return <Paywall feature="identity_map" />;
   }
 
@@ -29,19 +25,19 @@ export default async function IdentityMapPage() {
     supabase
       .from('checkins')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', viewUserId)
       .gte('date', thirtyDaysAgo)
       .order('date', { ascending: true }),
     supabase
       .from('patterns')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', viewUserId)
       .eq('is_active', true)
       .order('frequency', { ascending: false }),
     supabase
       .from('scans')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', viewUserId)
       .order('completed_at', { ascending: false })
       .limit(1)
       .single<Scan>(),
@@ -130,7 +126,7 @@ export default async function IdentityMapPage() {
       <div style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
           <p style={mutedLabel}>Pattern attivi</p>
-          <PatternAnalyzeButton hasEnoughData={checkins.length >= 3} />
+          <PatternAnalyzeButton hasEnoughData={checkins.length >= 3} disabled={isImpersonating} />
         </div>
 
         {patterns.length === 0 ? (
@@ -157,7 +153,7 @@ export default async function IdentityMapPage() {
         )}
       </div>
 
-      <WeeklyReportCard />
+      <WeeklyReportCard readOnly={isImpersonating} />
     </div>
   );
 }

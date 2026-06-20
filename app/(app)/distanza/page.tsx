@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import { getViewContext } from '@/lib/supabase/view-context';
 import Link from 'next/link';
 import type { IdentityProfile } from '@/lib/ai/identity-profile';
 import type { Checkin, Decision, Pattern } from '@/types';
@@ -65,19 +66,20 @@ function MetricCard({ label, now, before, unit, higherIsBetter = true }: {
 
 export default async function DistanzaPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
+  const viewContext = await getViewContext(supabase);
+  if (!viewContext) redirect('/login');
+  const { viewUserId } = viewContext;
 
   const today = new Date().toISOString().split('T')[0];
   const d30 = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
   const d60 = new Date(Date.now() - 60 * 86400000).toISOString().split('T')[0];
 
   const [profilesRes, checkinsRes, decisionsRes, patternsRes] = await Promise.all([
-    supabase.from('identity_profiles').select('*').eq('user_id', user.id)
+    supabase.from('identity_profiles').select('*').eq('user_id', viewUserId)
       .order('version', { ascending: false }).limit(2),
-    supabase.from('checkins').select('date, state_score').eq('user_id', user.id).gte('date', d60),
-    supabase.from('decisions').select('created_at, origin').eq('user_id', user.id).gte('created_at', d60),
-    supabase.from('patterns').select('*').eq('user_id', user.id),
+    supabase.from('checkins').select('date, state_score').eq('user_id', viewUserId).gte('date', d60),
+    supabase.from('decisions').select('created_at, origin').eq('user_id', viewUserId).gte('created_at', d60),
+    supabase.from('patterns').select('*').eq('user_id', viewUserId),
   ]);
 
   const profiles = (profilesRes.data ?? []) as IdentityProfile[];

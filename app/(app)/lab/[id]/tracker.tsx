@@ -14,10 +14,12 @@ export function ExperimentTracker({
   experimentId,
   trackedToday,
   todayEntry,
+  readOnly,
 }: {
   experimentId: string;
   trackedToday: boolean;
   todayEntry: ExperimentEntry | null;
+  readOnly?: boolean;
 }) {
   const [emerged, setEmerged]     = useState<boolean | null>(trackedToday ? todayEntry?.emerged ?? null : null);
   const [response, setResponse]   = useState<ExperimentResponse | null>(todayEntry?.response ?? null);
@@ -61,6 +63,16 @@ export function ExperimentTracker({
           {responseLabel}
         </p>
         {note && <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.5rem', fontStyle: 'italic' }}>{note}</p>}
+      </div>
+    );
+  }
+
+  if (readOnly) {
+    return (
+      <div style={trackerCard}>
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontFamily: 'Georgia, serif', lineHeight: 1.7 }}>
+          Giornata non ancora tracciata.
+        </p>
       </div>
     );
   }

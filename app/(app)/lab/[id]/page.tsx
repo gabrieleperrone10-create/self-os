@@ -1,5 +1,6 @@
 import { redirect, notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { getViewContext } from '@/lib/supabase/view-context';
 import type { Experiment, ExperimentEntry } from '@/types';
 import { ExperimentTracker } from './tracker';
 import { ExperimentReviewSection } from './review-section';
@@ -11,12 +12,13 @@ export default async function ExperimentDetailPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
+  const viewContext = await getViewContext(supabase);
+  if (!viewContext) redirect('/login');
+  const { viewUserId, isImpersonating } = viewContext;
 
   const [expRes, entriesRes] = await Promise.all([
-    supabase.from('experiments').select('*').eq('id', id).eq('user_id', user.id).single<Experiment>(),
-    supabase.from('experiment_entries').select('*').eq('experiment_id', id).eq('user_id', user.id).order('date', { ascending: true }),
+    supabase.from('experiments').select('*').eq('id', id).eq('user_id', viewUserId).single<Experiment>(),
+    supabase.from('experiment_entries').select('*').eq('experiment_id', id).eq('user_id', viewUserId).order('date', { ascending: true }),
   ]);
 
   if (!expRes.data) notFound();
@@ -133,6 +135,7 @@ export default async function ExperimentDetailPage({
             experimentId={experiment.id}
             trackedToday={trackedToday}
             todayEntry={entries.find(e => e.date === today) ?? null}
+            readOnly={isImpersonating}
           />
         </div>
       )}
@@ -142,6 +145,7 @@ export default async function ExperimentDetailPage({
         <ExperimentReviewSection
           experiment={experiment}
           canReview={canReview}
+          readOnly={isImpersonating}
         />
       )}
 

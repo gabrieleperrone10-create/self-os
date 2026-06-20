@@ -1,49 +1,49 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { getViewContext } from '@/lib/supabase/view-context';
 import Link from 'next/link';
 import { calculateStreak, averageStateScore } from '@/lib/utils/checkin';
 import { calculateMomentum } from '@/lib/utils/momentum';
-import type { Profile, Checkin, Scan, Decision } from '@/types';
+import type { Checkin, Scan, Decision } from '@/types';
 import { VoiceCheckinCard } from '@/components/shared/voice-checkin-card';
 import { MomentumCard } from '@/components/shared/momentum-card';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const viewContext = await getViewContext(supabase);
+  if (!viewContext) redirect('/login');
 
-  if (!user) redirect('/login');
+  const { viewUserId, viewProfile: profile, isImpersonating } = viewContext;
 
   // Parallel fetches
-  const [profileRes, checkinsRes, scanRes, decisionsRes] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', user.id).single<Profile>(),
+  const [checkinsRes, scanRes, decisionsRes] = await Promise.all([
     supabase
       .from('checkins')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', viewUserId)
       .order('date', { ascending: false })
       .limit(60),
     supabase
       .from('scans')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', viewUserId)
       .order('completed_at', { ascending: false })
       .limit(1)
       .single<Scan>(),
     supabase
       .from('decisions')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', viewUserId)
       .order('created_at', { ascending: false })
       .limit(30),
   ]);
 
-  const profile = profileRes.data;
   const checkins = (checkinsRes.data ?? []) as Checkin[];
   const scan = scanRes.data;
   const decisions = (decisionsRes.data ?? []) as Decision[];
 
-  // Redirect to scan if onboarding not done
-  if (profile && !profile.onboarding_completed) redirect('/scan');
+  // Redirect to scan if onboarding not done (non in modalità "Entra come utente")
+  if (profile && !profile.onboarding_completed && !isImpersonating) redirect('/scan');
 
   const firstName = profile?.full_name?.split(' ')[0] ?? 'amico';
 
@@ -230,7 +230,7 @@ export default async function DashboardPage() {
 
       {/* Voice check-in */}
       <div style={{ marginBottom: '3rem' }}>
-        <VoiceCheckinCard />
+        <VoiceCheckinCard disabled={isImpersonating} />
       </div>
 
       {/* Last insight */}

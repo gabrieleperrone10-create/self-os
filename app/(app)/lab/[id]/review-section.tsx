@@ -6,9 +6,11 @@ import type { Experiment } from '@/types';
 export function ExperimentReviewSection({
   experiment,
   canReview,
+  readOnly,
 }: {
   experiment: Experiment;
   canReview: boolean;
+  readOnly?: boolean;
 }) {
   const [review, setReview]     = useState(experiment.last_review ?? '');
   const [loading, setLoading]   = useState(false);
@@ -45,7 +47,11 @@ export function ExperimentReviewSection({
   return (
     <div style={reviewCard}>
       <p style={reviewLabel}>Review disponibile</p>
-      {canReview ? (
+      {readOnly ? (
+        <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.7 }}>
+          Nessuna review generata per questo esperimento.
+        </p>
+      ) : canReview ? (
         <>
           <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: '1.25rem' }}>
             Hai abbastanza dati per una review. Lab leggerà le tue giornate e ti darà una lettura onesta.

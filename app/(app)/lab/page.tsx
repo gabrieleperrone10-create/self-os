@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { getViewContext } from '@/lib/supabase/view-context';
 import Link from 'next/link';
 import type { Experiment, ExperimentEntry } from '@/types';
 
@@ -12,19 +13,20 @@ const RESPONSE_DOT: Record<string, { color: string; label: string }> = {
 
 export default async function LabPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
+  const viewContext = await getViewContext(supabase);
+  if (!viewContext) redirect('/login');
+  const { viewUserId, isImpersonating } = viewContext;
 
   const [experimentsRes, entriesRes] = await Promise.all([
     supabase
       .from('experiments')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', viewUserId)
       .order('created_at', { ascending: false }),
     supabase
       .from('experiment_entries')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', viewUserId)
       .order('date', { ascending: true }),
   ]);
 
@@ -59,7 +61,7 @@ export default async function LabPage() {
       <div style={{ marginBottom: '3rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1.25rem' }}>
           <p style={mutedLabel}>Attivi — {active.length}/2</p>
-          {canAdd && (
+          {canAdd && !isImpersonating && (
             <Link href="/lab/new" style={goldLink}>
               + Nuovo esperimento
             </Link>
@@ -71,7 +73,9 @@ export default async function LabPage() {
             <p style={{ fontFamily: 'Georgia, serif', fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
               Nessun esperimento attivo.
             </p>
-            <Link href="/lab/new" style={goldBtn}>Apri il primo esperimento →</Link>
+            {!isImpersonating && (
+              <Link href="/lab/new" style={goldBtn}>Apri il primo esperimento →</Link>
+            )}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -86,6 +90,7 @@ export default async function LabPage() {
                   entries={entries}
                   daysPassed={daysPassed}
                   trackedToday={trackedToday}
+                  isImpersonating={isImpersonating}
                 />
               );
             })}
@@ -137,11 +142,13 @@ function ExperimentCard({
   entries,
   daysPassed,
   trackedToday,
+  isImpersonating,
 }: {
   experiment: Experiment;
   entries: ExperimentEntry[];
   daysPassed: number;
   trackedToday: boolean;
+  isImpersonating?: boolean;
 }) {
   const totalDays = exp.duration_days;
   const dots = Array.from({ length: totalDays }, (_, i) => {
@@ -204,7 +211,7 @@ function ExperimentCard({
       </div>
 
       {/* Track today CTA */}
-      {!trackedToday && daysPassed < totalDays && (
+      {!trackedToday && daysPassed < totalDays && !isImpersonating && (
         <Link href={`/lab/${exp.id}#track`} style={trackBtn}>
           Segna la giornata →
         </Link>

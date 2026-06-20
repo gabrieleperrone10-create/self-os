@@ -7,7 +7,7 @@ import type { VoiceAnalysis } from '@/app/api/ai/voice-analyze/route';
 
 type Phase = 'idle' | 'recording' | 'analyzing' | 'done';
 
-export function VoiceCheckinCard() {
+export function VoiceCheckinCard({ disabled }: { disabled?: boolean }) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [analysis, setAnalysis] = useState<VoiceAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +49,13 @@ export function VoiceCheckinCard() {
     >
       <p style={sectionLabel}>Check-in vocale</p>
 
-      {phase === 'idle' && (
+      {phase === 'idle' && disabled && (
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.6, fontFamily: 'Georgia, serif' }}>
+          Non disponibile in modalità sola lettura.
+        </p>
+      )}
+
+      {phase === 'idle' && !disabled && (
         <>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.25rem', fontFamily: 'Georgia, serif' }}>
             Parla per 30–60 secondi. Come stai adesso?

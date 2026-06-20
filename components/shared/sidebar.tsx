@@ -23,6 +23,7 @@ import {
   Shield,
 } from 'lucide-react';
 import type { UserRole } from '@/types';
+import { useViewAs } from './view-as-context';
 
 const mainNav = [
   { href: '/dashboard',    label: 'Dashboard',     icon: LayoutDashboard },
@@ -49,6 +50,7 @@ export function Sidebar() {
   const supabase = createClient();
   const [role, setRole] = useState<UserRole>('user');
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { isImpersonating } = useViewAs();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -82,7 +84,7 @@ export function Sidebar() {
     <>
       {/* Mobile hamburger button */}
       <button
-        className="mobile-menu-btn"
+        className={`mobile-menu-btn${isImpersonating ? ' shifted-down' : ''}`}
         onClick={() => setMobileOpen(o => !o)}
         aria-label="Menu"
         style={{
@@ -128,13 +130,13 @@ export function Sidebar() {
           {/* Scan */}
           <NavLink href="/scan" label="Scan iniziale" icon={<ScanLine size={16} strokeWidth={1.5} />} active={isActive('/scan')} />
 
-          {/* Coach — only for coach role */}
-          {(role === 'coach' || role === 'admin') && (
+          {/* Coach — only for coach role, nascosto in modalità "Entra come utente" */}
+          {!isImpersonating && (role === 'coach' || role === 'admin') && (
             <NavLink href="/coach" label="Clienti" icon={<Users size={16} strokeWidth={1.5} />} active={isActive('/coach')} />
           )}
 
-          {/* Admin — only for admin role */}
-          {role === 'admin' && (
+          {/* Admin — only for admin role, nascosto in modalità "Entra come utente" */}
+          {!isImpersonating && role === 'admin' && (
             <NavLink href="/admin" label="Admin" icon={<Shield size={16} strokeWidth={1.5} />} active={isActive('/admin')} />
           )}
         </nav>

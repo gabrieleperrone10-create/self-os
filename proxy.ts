@@ -37,7 +37,8 @@ export async function proxy(request: NextRequest) {
 
   // Public paths — accessible without auth
   // /api/cron: autenticato via CRON_SECRET nella route, non via sessione
-  const isPublicPath = isAuthPath || pathname === '/' || pathname.startsWith('/api/webhooks') || pathname.startsWith('/api/cron') || pathname.startsWith('/join');
+  // /api/biometrics/ingest: autenticato via Bearer token (Health Auto Export da iPhone)
+  const isPublicPath = isAuthPath || pathname === '/' || pathname.startsWith('/api/webhooks') || pathname.startsWith('/api/cron') || pathname.startsWith('/join') || pathname.startsWith('/api/biometrics/ingest');
 
   // Redirect unauthenticated users to login
   if (!user && !isPublicPath) {

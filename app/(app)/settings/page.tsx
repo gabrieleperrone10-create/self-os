@@ -1,20 +1,16 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import type { Profile } from '@/types';
+import { getViewContext } from '@/lib/supabase/view-context';
 import { PLANS } from '@/lib/stripe/plans';
 import { SettingsActions } from './actions';
 import { DataSection } from './data-section';
+import { CalendarSection } from './calendar-section';
 
 export default async function SettingsPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single<Profile>();
+  const viewContext = await getViewContext(supabase);
+  if (!viewContext) redirect('/login');
+  const { viewProfile: profile, isImpersonating } = viewContext;
 
   const currentPlan = profile?.plan ?? 'free';
 
@@ -42,7 +38,7 @@ export default async function SettingsPage() {
           {profile?.full_name ?? '—'}
         </p>
         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-          {profile?.email ?? user.email}
+          {profile?.email}
         </p>
       </div>
 
@@ -99,7 +95,7 @@ export default async function SettingsPage() {
                   ))}
                 </ul>
 
-                {!isCurrent && (
+                {!isCurrent && !isImpersonating && (
                   <SettingsActions
                     plan={plan.id}
                     hasBilling={!!profile?.stripe_customer_id}
@@ -113,7 +109,7 @@ export default async function SettingsPage() {
       </div>
 
       {/* Billing portal */}
-      {profile?.stripe_customer_id && (
+      {profile?.stripe_customer_id && !isImpersonating && (
         <div style={{ maxWidth: '480px' }}>
           <p style={{ ...mutedLabel, marginBottom: '1rem' }}>Fatturazione</p>
           <SettingsActions plan={currentPlan} hasBilling={true} currentPlan={currentPlan} portalOnly />
@@ -121,7 +117,15 @@ export default async function SettingsPage() {
       )}
 
       {/* Notifiche + dati (GDPR) */}
-      <DataSection emailReminders={(profile as unknown as { email_reminders?: boolean })?.email_reminders !== false} />
+      <CalendarSection />
+
+      {!isImpersonating ? (
+        <DataSection emailReminders={(profile as unknown as { email_reminders?: boolean })?.email_reminders !== false} />
+      ) : (
+        <p style={{ marginTop: '3rem', fontSize: '0.85rem', color: 'var(--text-muted)', maxWidth: '480px' }}>
+          Notifiche, esportazione ed eliminazione account non disponibili in modalità sola lettura.
+        </p>
+      )}
     </div>
   );
 }

@@ -16,6 +16,7 @@ import {
   computeMetrics,
   getApprovedProposals,
   buildDeltaContext,
+  type RunMetrics,
 } from './memory'
 
 dotenv.config({ path: path.join(process.cwd(), '.env.local') })
@@ -304,8 +305,149 @@ npm run research:agent    # solo analisi (dati già presenti)
 \`\`\`
 `)
 
+  // ── Email ────────────────────────────────────────────────────────────────────
+  console.log('\n  Invio email di riepilogo...')
+  await sendResearchEmail({ today, metrics: currentMetrics, totalUsers, perAnalysis, proposals })
+
   console.log(`\n✅ Research completato in ${elapsed(total)}`)
   console.log(`   Apri research/vault/ in Obsidian.\n`)
+}
+
+// ── Email helpers ──────────────────────────────────────────────────────────────
+
+function escHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+function buildEmailHtml(p: {
+  today: string
+  metrics: RunMetrics
+  totalUsers: number
+  perAnalysis: string
+  proposals: string
+}): string {
+  const { today, metrics, totalUsers, perAnalysis, proposals } = p
+
+  const excerpt = perAnalysis.length > 1400
+    ? perAnalysis.slice(0, 1400) + '\n\n[... testo completo in Obsidian → findings/personal/' + today + ']'
+    : perAnalysis
+
+  const rows = [
+    ['Utenti totali', String(totalUsers)],
+    ['Check-in totali', String(metrics.total_checkins)],
+    ['Pattern attivi', String(metrics.active_patterns)],
+    ['Decisioni registrate', String(metrics.total_decisions)],
+    ['Stato medio mattina', metrics.avg_state_morning != null ? String(metrics.avg_state_morning) : '—'],
+    ['Stato medio sera',    metrics.avg_state_evening  != null ? String(metrics.avg_state_evening)  : '—'],
+  ].map(([k, v]) =>
+    `<tr><td style="padding:8px 0;color:#A89880;font-size:13px;border-bottom:1px solid #1E1812">${k}</td>` +
+    `<td style="padding:8px 0;color:#C9A96E;font-size:13px;font-weight:bold;border-bottom:1px solid #1E1812;text-align:right">${v}</td></tr>`
+  ).join('')
+
+  const pre = (content: string) =>
+    `<pre style="background:#120F0A;border:1px solid #1E1812;padding:20px;margin:0;` +
+    `border-radius:2px;color:#F5F0E8;font-size:13px;white-space:pre-wrap;` +
+    `overflow-wrap:break-word;font-family:Georgia,serif;line-height:1.65">${escHtml(content)}</pre>`
+
+  const h2 = (label: string) =>
+    `<h2 style="color:#A89880;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;` +
+    `margin:40px 0 14px;padding-bottom:8px;border-bottom:1px solid #1E1812;font-weight:normal">${label}</h2>`
+
+  const code = (s: string) =>
+    `<code style="background:#1E1812;color:#C9A96E;padding:2px 6px;font-size:12px;font-family:monospace">${escHtml(s)}</code>`
+
+  return `<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SELF OS Research — ${today}</title>
+</head>
+<body style="margin:0;padding:0;background:#0A0806;">
+<div style="max-width:680px;margin:0 auto;padding:48px 28px;font-family:Georgia,serif;">
+
+  <p style="color:#4A4035;font-size:11px;margin:0 0 28px;letter-spacing:0.12em;text-transform:uppercase">SELF OS · Research Agent</p>
+
+  <h1 style="color:#C9A96E;font-size:24px;margin:0 0 6px;font-weight:normal">Analisi R&D</h1>
+  <p style="color:#4A4035;font-size:13px;margin:0 0 48px">${today} · Haiku 4.5 → Opus 4.8 → Sonnet 4.6</p>
+
+  ${h2('Metriche Sistema')}
+  <table style="width:100%;border-collapse:collapse">${rows}</table>
+
+  ${h2('Analisi Personale — Opus 4.8')}
+  ${pre(excerpt)}
+
+  ${h2('Proposte R&D — Sonnet 4.6')}
+  <p style="color:#A89880;font-size:13px;margin:0 0 16px">
+    File in Obsidian: ${code('research/vault/proposals/' + today + '.md')}
+  </p>
+  ${pre(proposals)}
+
+  ${h2('Come Approvare e Implementare')}
+  <div style="background:#120F0A;border:1px solid #1E1812;padding:24px;border-radius:2px;">
+    <p style="color:#C9A96E;font-size:14px;margin:0 0 8px;font-weight:bold">1. Approva in Obsidian</p>
+    <p style="color:#A89880;font-size:13px;margin:0 0 24px;line-height:1.6">
+      Apri ${code('research/vault/proposals/' + today + '.md')}<br>
+      Cambia il frontmatter da ${code('status: proposed')} a ${code('status: approved')}<br>
+      sulle sezioni che vuoi implementare.
+    </p>
+    <p style="color:#C9A96E;font-size:14px;margin:0 0 8px;font-weight:bold">2. Di' a Claude Code</p>
+    <p style="color:#A89880;font-size:13px;margin:0 0 12px;line-height:1.6">Nella chat, scrivi esattamente:</p>
+    <div style="background:#0A0806;border:1px solid #1E1812;padding:12px 16px;border-radius:2px;">
+      <code style="color:#C9A96E;font-size:13px;font-family:monospace">implementa le proposte approvate del ${today}</code>
+    </div>
+  </div>
+
+  <div style="margin-top:56px;padding-top:24px;border-top:1px solid #1E1812;">
+    <p style="color:#4A4035;font-size:11px;margin:0;line-height:1.6">
+      SELF OS Research Agent · ogni domenica alle 09:00 ·
+      <a href="mailto:noreply@selfos.app" style="color:#4A4035">noreply@selfos.app</a>
+    </p>
+  </div>
+
+</div>
+</body>
+</html>`
+}
+
+async function sendResearchEmail(p: {
+  today: string
+  metrics: RunMetrics
+  totalUsers: number
+  perAnalysis: string
+  proposals: string
+}): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) {
+    console.log('  ⚠️  RESEND_API_KEY non trovata — email saltata')
+    return
+  }
+
+  const html = buildEmailHtml(p)
+
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'SELF OS Research <noreply@selfos.app>',
+        to: ['gabrieleperrone10@gmail.com'],
+        subject: `SELF OS Research — ${p.today}`,
+        html,
+      }),
+    })
+
+    if (res.ok) {
+      console.log('  ✉️  Email inviata → gabrieleperrone10@gmail.com')
+    } else {
+      console.error(`  ❌ Email fallita (${res.status}):`, await res.text())
+    }
+  } catch (err) {
+    console.error('  ❌ Email fallita:', err)
+  }
 }
 
 main().catch(err => {

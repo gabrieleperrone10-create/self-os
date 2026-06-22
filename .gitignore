@@ -43,6 +43,10 @@ next-env.d.ts
 # research — raw data exports (contain user data, never commit)
 research/data/
 
+# research — log di esecuzione del cron settimanale (rigenerabili)
+research/logs/*
+!research/logs/.gitkeep
+
 # eval harness — report di esecuzione (rigenerabili)
 evals/results/
 

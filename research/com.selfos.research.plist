@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.selfos.research</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/gabrieleperrone/dev/self-os/research/run-weekly.sh</string>
+    </array>
+
+    <!-- Domenica (0) alle 09:00 ora locale — CEST in estate = 07:00 UTC -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>0</integer>
+        <key>Hour</key>
+        <integer>9</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>HOME</key>
+        <string>/Users/gabrieleperrone</string>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/Users/gabrieleperrone/dev/self-os/research/logs/weekly.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/gabrieleperrone/dev/self-os/research/logs/weekly-error.log</string>
+
+    <!-- Non girare all'avvio, solo al calendario -->
+    <key>RunAtLoad</key>
+    <false/>
+</dict>
+</plist>

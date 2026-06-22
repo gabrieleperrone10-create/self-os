@@ -187,7 +187,9 @@ export async function generateBiometricsInsight(
 
   const message = await anthropic.messages.create({
     model: AI_MODEL,
-    max_tokens: 800,
+    // 800 troncava il JSON (lettura + correlazioni + indicazione con sonno e
+    // convergenza arrivano a ~1200 token) → parse fail → 500. 2000 dà margine.
+    max_tokens: 2000,
     system: cachedKbSystem(kbContext, BIOMETRICS_INSIGHT_INSTRUCTION),
     messages: [{ role: 'user', content: prompt }],
   });

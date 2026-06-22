@@ -146,6 +146,14 @@ export default function MirrorClient({
     }
   }
 
+  // Torna alla domanda precedente — le risposte restano in `answers`,
+  // quindi la domanda precedente si ripresenta già compilata.
+  function goBack() {
+    if (currentQ === 0) return;
+    setError(null);
+    transition(() => setCurrentQ(q => q - 1));
+  }
+
   async function submit() {
     setStep('loading');
     setError(null);
@@ -263,6 +271,13 @@ export default function MirrorClient({
                 transform: visible ? 'translateY(0)' : 'translateY(-8px)',
                 transition: 'opacity 0.38s ease, transform 0.38s ease',
               }}>
+                {currentQ > 0 && (
+                  <button onClick={goBack} style={backBtn}
+                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--gold)')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}>
+                    ← Indietro
+                  </button>
+                )}
                 <h2 style={{ ...questionText, marginBottom: currentQuestion.type === 'slider' ? '2.5rem' : '2rem' }}>
                   {currentQuestion.text}
                 </h2>
@@ -538,6 +553,13 @@ const primaryBtn: React.CSSProperties = {
   color: 'var(--gold)', fontFamily: 'Georgia, serif',
   fontSize: '0.875rem', letterSpacing: '0.05em',
   cursor: 'pointer', transition: 'all 0.35s ease',
+};
+
+const backBtn: React.CSSProperties = {
+  background: 'none', border: 'none', padding: 0,
+  color: 'var(--text-muted)', fontFamily: 'Georgia, serif',
+  fontSize: '0.72rem', letterSpacing: '0.08em', cursor: 'pointer',
+  marginBottom: '1.25rem', transition: 'color 0.3s ease',
 };
 
 function delay(ms: number) {

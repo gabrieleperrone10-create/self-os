@@ -227,6 +227,14 @@ export default function CheckinPage() {
     }
   }
 
+  // Torna alla domanda precedente — le risposte restano in `answers`,
+  // quindi la domanda precedente si ripresenta già compilata.
+  function goBack() {
+    if (currentQ === 0) return;
+    setError(null);
+    transition(() => setCurrentQ(q => q - 1), 'out');
+  }
+
   async function submitCheckin(finalAnswers: Record<string, string | number>) {
     setStep('submitting');
     try {
@@ -376,6 +384,13 @@ export default function CheckinPage() {
         {/* QUESTION */}
         {step === 'q' && currentQuestion && (
           <div>
+            {currentQ > 0 && (
+              <button onClick={goBack} style={backBtn}
+                onMouseEnter={e => (e.currentTarget.style.color = 'var(--gold)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}>
+                ← Indietro
+              </button>
+            )}
             <p style={{ ...label(typeColor), marginBottom: '0.4rem' }}>{currentQuestion.label}</p>
             <h2 style={{ ...heading, marginBottom: currentQuestion.type === 'choice' ? '2rem' : '2.5rem' }}>
               {currentQuestion.text}
@@ -661,6 +676,13 @@ const textarea: React.CSSProperties = {
   fontSize: '1rem', lineHeight: 1.75, padding: '0.5rem 0',
   resize: 'none', outline: 'none',
   transition: 'border-color 0.4s ease', caretColor: 'var(--gold)',
+};
+
+const backBtn: React.CSSProperties = {
+  background: 'none', border: 'none', padding: 0,
+  color: 'var(--text-muted)', fontFamily: 'Georgia, serif',
+  fontSize: '0.72rem', letterSpacing: '0.08em', cursor: 'pointer',
+  marginBottom: '1.25rem', transition: 'color 0.3s ease',
 };
 
 const primaryBtn: React.CSSProperties = {

@@ -3,6 +3,7 @@ export const maxDuration = 300;
 import { NextResponse, type NextRequest } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isAuthorizedCron, romeToday, fetchActiveUsers, daysAgo } from '@/lib/cron/utils';
+import { fetchAndParseIcs } from '@/lib/calendar/ics';
 import { generateWeeklyReport, currentWeekBounds } from '@/lib/ai/reports';
 import { resend, FROM_EMAIL } from '@/lib/resend/client';
 import { eveningReminderHtml, weeklyReportEmailHtml } from '@/lib/resend/templates';
@@ -75,6 +76,40 @@ export async function GET(request: NextRequest) {
         stats.errors++;
         console.error(`[cron-evening] utente ${user.id}:`, err);
       }
+    }
+
+    // Auto-sync calendari di tutti gli utenti attivi
+    try {
+      const { data: connections } = await supabase
+        .from('calendar_connections')
+        .select('user_id, ics_url');
+      for (const conn of connections ?? []) {
+        try {
+          const now = Date.now();
+          const past   = new Date(now - 60 * 24 * 60 * 60 * 1000).toISOString();
+          const future = new Date(now + 90 * 24 * 60 * 60 * 1000).toISOString();
+          const events = await fetchAndParseIcs(conn.ics_url);
+          type SyncRow = { user_id: string; external_id: string; title: string; start_at: string; end_at: string | null; location: string | null; attendees: string[] | null; all_day: boolean };
+          const seen = new Map<string, SyncRow>();
+          for (const e of events) {
+            if (e.start_at < past || e.start_at > future) continue;
+            const row: SyncRow = { ...e, user_id: conn.user_id };
+            const existing = seen.get(e.external_id);
+            if (!existing || e.start_at > existing.start_at) seen.set(e.external_id, row);
+          }
+          const rows = Array.from(seen.values());
+          if (rows.length > 0) {
+            await supabase.from('calendar_events').upsert(rows, { onConflict: 'user_id,external_id' });
+          }
+          await supabase.from('calendar_connections')
+            .update({ last_sync: new Date().toISOString(), event_count: rows.length })
+            .eq('user_id', conn.user_id);
+        } catch (calErr) {
+          console.error(`[cron-evening] calendar sync user ${conn.user_id}:`, calErr);
+        }
+      }
+    } catch (calErr) {
+      console.error('[cron-evening] calendar sync loop:', calErr);
     }
 
     console.log('[cron-evening]', JSON.stringify(stats));

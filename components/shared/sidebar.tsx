@@ -21,6 +21,7 @@ import {
   Menu,
   X,
   Shield,
+  Activity,
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 import { useViewAs } from './view-as-context';
@@ -30,6 +31,7 @@ const mainNav = [
   { href: '/checkin',      label: 'Check-in',      icon: CalendarCheck },
   { href: '/identity-map', label: 'Identity Map',  icon: Map },
   { href: '/distanza',     label: 'Distanza',      icon: Footprints },
+  { href: '/biometrics',  label: 'Corpo',         icon: Activity },
   { href: '/mirror',       label: 'Mirror',        icon: GitFork },
   { href: '/lab',          label: 'Lab',           icon: FlaskConical },
   { href: '/segnali',      label: 'Segnali',       icon: Zap },

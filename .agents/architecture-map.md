@@ -133,6 +133,14 @@ chi.
 - **`lib/ai/identity-profile.ts`**: profilo longitudinale iniettato in mirror,
   daily-insight, weekly-report, monthly-letter; refresh via `after()` in
   daily-insight. Tabella `identity_profiles` (migrazione 007).
+- **`lib/ai/biometrics-insight.ts`**: insight biometrico persistito e versionato
+  (tabella `biometric_insights`, migrazione 015). Stesso pattern di identity-profile:
+  `generate` + `fetchLatest` + `maybeRefresh` (staleness 7gg, fail-open). Refresh via
+  un SECONDO `after()` in daily-insight (esce subito con count=0 per chi non ha
+  biometrici). La pagina `/biometrics` (Server Component, niente `after()`) legge
+  l'ultima versione e la mostra sempre; il bottone è "rigenera" (route POST →
+  `generateBiometricsInsight`). Convergenza check-in↔corpo (stato sera N → corpo
+  notte N→N+1) costruita nella lib e iniettata nel prompt.
 - **`evals/`**: importa i VERI builder e schemi di produzione — se cambi la firma
   di un prompt valutato (mirror, daily-insight, scan-analysis), `evals/run.ts`
   smette di compilare: aggiornalo nello stesso commit.

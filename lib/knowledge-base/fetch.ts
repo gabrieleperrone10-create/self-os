@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 
 export type KBCategory =
   | 'archetype' | 'framework' | 'process' | 'wheel_of_life' | 'glossary'
-  | 'mechanism' | 'safety' | 'epistemic';
+  | 'mechanism' | 'safety' | 'epistemic' | 'biometrics_framework';
 
 interface KBEntry {
   title: string;
@@ -74,4 +74,12 @@ export async function fetchSafetyContext(): Promise<string> {
  */
 export async function fetchFullContext(): Promise<string> {
   return fetchKBContext(['archetype', 'framework', 'process', 'wheel_of_life', 'mechanism', 'epistemic']);
+}
+
+/**
+ * Contesto biometrico: i tre strati di lettura corpo/mente + i meccanismi
+ * generali + contratto epistemico + safety. Per la route biometrics-insight.
+ */
+export async function fetchBiometricsContext(): Promise<string> {
+  return fetchKBContext(['biometrics_framework', 'mechanism', 'epistemic', 'safety']);
 }

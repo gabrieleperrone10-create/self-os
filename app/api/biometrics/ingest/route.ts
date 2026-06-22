@@ -28,6 +28,28 @@ function extractDate(point: MetricPoint): Date | null {
   return isNaN(ts.getTime()) ? null : ts;
 }
 
+// Il sonno non è un singolo numero: HAE manda un oggetto per notte con più campi
+// (asleep, inBed, core, deep, rem, awake…). Non avendo certezza dei nomi esatti,
+// estraiamo OGNI campo numerico come sotto-metrica namespacata `sleep_<campo>`,
+// così il DB rivela da solo cosa HAE invia davvero. Salta le chiavi non-valore.
+const SLEEP_SKIP_KEYS = new Set([
+  'date', 'Date', 'startDate', 'endDate', 'source', 'Source', 'id',
+  'sleepStart', 'sleepEnd', 'inBedStart', 'inBedEnd',
+]);
+
+function extractSleepRows(point: MetricPoint): Array<{ suffix: string; value: number }> {
+  const out: Array<{ suffix: string; value: number }> = [];
+  for (const [key, v] of Object.entries(point)) {
+    if (SLEEP_SKIP_KEYS.has(key)) continue;
+    if (typeof v === 'number' && isFinite(v)) out.push({ suffix: key, value: v });
+    else if (typeof v === 'string' && v.trim() !== '') {
+      const n = parseFloat(v);
+      if (isFinite(n)) out.push({ suffix: key, value: n });
+    }
+  }
+  return out;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const auth = request.headers.get('Authorization') ?? '';
@@ -61,12 +83,42 @@ export async function POST(request: NextRequest) {
       value: number; unit: string; recorded_at: string;
     }> = [];
 
+    // Diagnostica: per ogni metrica conta i punti ricevuti vs importati, così
+    // un export rivela quali metriche (es. sleep_analysis) vengono scartate
+    // perché il loro payload non espone un valore numerico riconosciuto.
+    const perMetric: Record<string, { received: number; imported: number }> = {};
+
+    const isSleep = (name: string) => name === 'sleep_analysis' || name === 'sleep';
+
     for (const metric of metrics) {
       if (!Array.isArray(metric.data)) continue;
+      const stat = perMetric[metric.name] ?? { received: 0, imported: 0 };
       for (const point of metric.data) {
-        const ts  = extractDate(point);
+        stat.received++;
+        const ts = extractDate(point);
+        if (!ts) continue;
+
+        if (isSleep(metric.name)) {
+          // Sonno: estrai tutti i campi numerici come sleep_<campo>
+          const sleepRows = extractSleepRows(point);
+          if (sleepRows.length === 0) continue;
+          stat.imported++;
+          for (const { suffix, value } of sleepRows) {
+            rows.push({
+              user_id:     conn.user_id,
+              source:      'apple_health',
+              metric:      `sleep_${suffix}`,
+              value,
+              unit:        'h',
+              recorded_at: ts.toISOString(),
+            });
+          }
+          continue;
+        }
+
         const val = extractValue(point);
-        if (!ts || val === null) continue;
+        if (val === null) continue;
+        stat.imported++;
         rows.push({
           user_id:     conn.user_id,
           source:      'apple_health',
@@ -76,14 +128,26 @@ export async function POST(request: NextRequest) {
           recorded_at: ts.toISOString(),
         });
       }
+      perMetric[metric.name] = stat;
     }
 
+    // Logga le metriche ricevute ma scartate del tutto (campione di chiavi incluso)
+    const dropped = Object.entries(perMetric).filter(([, s]) => s.imported === 0 && s.received > 0);
+    if (dropped.length > 0) {
+      const sample = metrics.find(m => m.name === dropped[0][0])?.data?.[0];
+      console.warn('[biometrics/ingest] metriche SCARTATE:', dropped.map(([n, s]) => `${n}(${s.received})`).join(', '),
+        '| esempio chiavi:', sample ? Object.keys(sample).join(',') : 'n/a');
+    }
+
+    // ignoreDuplicates: false → ON CONFLICT DO UPDATE: aggiorna value e unit
+    // così i totali giornalieri progressivi (passi, calorie) si aggiornano
+    // ad ogni export di Health Auto Export invece di restare statici
     for (let i = 0; i < rows.length; i += 500) {
       const { error } = await supabase
         .from('biometric_samples')
         .upsert(rows.slice(i, i + 500), {
           onConflict: 'user_id,source,metric,recorded_at',
-          ignoreDuplicates: true,
+          ignoreDuplicates: false,
         });
       if (error) throw error;
     }

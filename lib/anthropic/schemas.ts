@@ -111,3 +111,21 @@ export const experimentGenerationSchema = z.looseObject({
     duration_days: z.coerce.number(),
   }),
 }) satisfies z.ZodType<ExperimentGeneration>;
+
+export type BiometricsInsight = {
+  stato_nervoso: 'recupero' | 'attivo_stabile' | 'stress_moderato' | 'stress_elevato' | 'segnale_assente';
+  etichetta: string;
+  lettura: string;
+  correlazioni: Array<{ evento: string; impatto: string }>;
+  indicazione: string;
+  affidabilita: 'alta' | 'media' | 'bassa';
+};
+
+export const biometricsInsightSchema = z.looseObject({
+  stato_nervoso: z.enum(['recupero', 'attivo_stabile', 'stress_moderato', 'stress_elevato', 'segnale_assente']),
+  etichetta: z.string(),
+  lettura: z.string(),
+  correlazioni: z.array(z.object({ evento: z.string(), impatto: z.string() })),
+  indicazione: z.string(),
+  affidabilita: z.enum(['alta', 'media', 'bassa']),
+}) satisfies z.ZodType<BiometricsInsight>;

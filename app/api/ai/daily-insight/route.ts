@@ -4,6 +4,7 @@ import { NextResponse, after } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { checkAiQuota, recordAiUsage, quotaExceededBody } from '@/lib/ai/usage';
 import { identityProfileContext, maybeRefreshIdentityProfile } from '@/lib/ai/identity-profile';
+import { maybeRefreshBiometricsInsight } from '@/lib/ai/biometrics-insight';
 import { anthropic, AI_MODEL, cachedKbSystem } from '@/lib/anthropic/client';
 import { DAILY_INSIGHT_PROMPT } from '@/lib/anthropic/prompts/daily-insight';
 import { fetchDailyContext } from '@/lib/knowledge-base/fetch';
@@ -70,9 +71,11 @@ export async function POST(request: Request) {
 
     void recordAiUsage(supabase, user.id, 'daily-insight', AI_MODEL, message.usage);
 
-    // Dopo la risposta: rigenera il profilo identitario se ha 7+ giorni.
+    // Dopo la risposta: rigenera le sintesi longitudinali se hanno 7+ giorni.
     // after() garantisce l'esecuzione anche post-response su Vercel.
+    // L'insight biometrico esce subito (count=0) per chi non ha dati corpo.
     after(() => maybeRefreshIdentityProfile(supabase, user.id));
+    after(() => maybeRefreshBiometricsInsight(supabase, user.id));
 
     const rawContent = message.content[0];
     if (rawContent.type !== 'text') throw new Error('Risposta AI non valida');

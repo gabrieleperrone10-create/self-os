@@ -158,8 +158,8 @@ export function DecisionJournal({ readOnly }: { readOnly?: boolean }) {
                     {reflection && (
                       <div style={{
                         padding: '1rem 1.25rem',
-                        background: 'rgba(201,169,110,0.05)',
-                        border: '1px solid rgba(201,169,110,0.15)',
+                        background: 'color-mix(in srgb, var(--gold) 5%, transparent)',
+                        border: '1px solid color-mix(in srgb, var(--gold) 15%, transparent)',
                         borderRadius: '3px',
                       }}>
                         <p style={{ fontSize: '0.65rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '0.5rem' }}>

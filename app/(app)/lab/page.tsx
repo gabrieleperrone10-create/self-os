@@ -267,5 +267,5 @@ const goldBtn: React.CSSProperties = {
 const trackBtn: React.CSSProperties = {
   display: 'inline-block', fontSize: '0.82rem', color: 'var(--gold)',
   textDecoration: 'none', fontFamily: 'Georgia, serif',
-  borderBottom: '1px solid rgba(201,169,110,0.3)', paddingBottom: '1px',
+  borderBottom: '1px solid color-mix(in srgb, var(--gold) 30%, transparent)', paddingBottom: '1px',
 };

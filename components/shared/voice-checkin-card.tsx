@@ -95,7 +95,7 @@ export function VoiceCheckinCard({ disabled }: { disabled?: boolean }) {
                   style={{
                     fontSize: '0.7rem',
                     padding: '0.2rem 0.5rem',
-                    border: '1px solid rgba(201,169,110,0.3)',
+                    border: '1px solid color-mix(in srgb, var(--gold) 30%, transparent)',
                     borderRadius: '2px',
                     color: 'var(--gold)',
                     letterSpacing: '0.04em',

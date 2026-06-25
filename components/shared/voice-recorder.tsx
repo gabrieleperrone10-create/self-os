@@ -243,8 +243,8 @@ export function VoiceRecorder({ onConfirm, onCancel, maxSeconds = 60, label }: P
           {displayText && (
             <div style={{
               padding: '0.75rem 1rem',
-              background: 'rgba(201,169,110,0.05)',
-              border: '1px solid rgba(201,169,110,0.15)',
+              background: 'color-mix(in srgb, var(--gold) 5%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--gold) 15%, transparent)',
               borderRadius: '3px',
               fontSize: '0.875rem',
               color: 'var(--text-secondary)',
@@ -344,7 +344,7 @@ function micButtonStyle(active: boolean, size: number): React.CSSProperties {
     height: `${size}px`,
     borderRadius: '50%',
     border: `1px solid ${active ? 'var(--gold)' : 'var(--border)'}`,
-    background: active ? 'rgba(201,169,110,0.12)' : 'transparent',
+    background: active ? 'color-mix(in srgb, var(--gold) 12%, transparent)' : 'transparent',
     color: active ? 'var(--gold)' : 'var(--text-muted)',
     display: 'flex',
     alignItems: 'center',
@@ -352,7 +352,7 @@ function micButtonStyle(active: boolean, size: number): React.CSSProperties {
     cursor: 'pointer',
     flexShrink: 0,
     transition: 'all 0.3s ease',
-    boxShadow: active ? '0 0 0 6px rgba(201,169,110,0.1), 0 0 0 12px rgba(201,169,110,0.05)' : 'none',
+    boxShadow: active ? '0 0 0 6px color-mix(in srgb, var(--gold) 10%, transparent), 0 0 0 12px color-mix(in srgb, var(--gold) 5%, transparent)' : 'none',
     animation: active ? 'micPulse 1.5s ease-in-out infinite' : 'none',
   };
 }

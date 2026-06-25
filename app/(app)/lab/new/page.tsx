@@ -127,7 +127,7 @@ export default function LabNewPage() {
                   style={{
                     ...sourceCard,
                     borderColor: selectedPattern?.id === p.id ? 'var(--gold)' : 'var(--border)',
-                    background: selectedPattern?.id === p.id ? 'rgba(201,169,110,0.06)' : 'var(--surface)',
+                    background: selectedPattern?.id === p.id ? 'color-mix(in srgb, var(--gold) 6%, transparent)' : 'var(--surface)',
                     textAlign: 'left' as const,
                   }}
                 >

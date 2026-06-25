@@ -5,6 +5,7 @@ import { PLANS } from '@/lib/stripe/plans';
 import { SettingsActions } from './actions';
 import { DataSection } from './data-section';
 import { CalendarSection } from './calendar-section';
+import { ThemeSection } from './theme-section';
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -21,6 +22,9 @@ export default async function SettingsPage() {
         <p style={mutedLabel}>IMPOSTAZIONI</p>
         <h1 style={pageTitle}>Account e piano</h1>
       </div>
+
+      {/* Aspetto — tema */}
+      <ThemeSection />
 
       {/* Account info */}
       <div

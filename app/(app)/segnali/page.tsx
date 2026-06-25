@@ -51,7 +51,7 @@ function SignalCard({ signal, isNew = false }: { signal: Signal; isNew?: boolean
   return (
     <div style={{
       background: 'var(--surface)',
-      border: `1px solid ${isNew ? 'rgba(201,169,110,0.3)' : 'var(--border)'}`,
+      border: `1px solid ${isNew ? 'color-mix(in srgb, var(--gold) 30%, transparent)' : 'var(--border)'}`,
       borderLeft: `2px solid ${stateColor(signal.state_score)}`,
       borderRadius: '3px',
       padding: '1.25rem 1.5rem',

@@ -103,8 +103,8 @@ export default async function IdentityMapPage() {
                     backgroundColor: day.count === 0
                       ? 'var(--border)'
                       : day.count === 1
-                        ? 'rgba(201,169,110,0.35)'
-                        : 'rgba(201,169,110,0.75)',
+                        ? 'color-mix(in srgb, var(--gold) 35%, transparent)'
+                        : 'color-mix(in srgb, var(--gold) 75%, transparent)',
                   }}
                 />
               ))}
@@ -115,9 +115,9 @@ export default async function IdentityMapPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem' }}>
           <div style={{ width: '10px', height: '10px', borderRadius: '2px', backgroundColor: 'var(--border)' }} />
           <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginRight: '0.75rem' }}>Nessuno</span>
-          <div style={{ width: '10px', height: '10px', borderRadius: '2px', backgroundColor: 'rgba(201,169,110,0.35)' }} />
+          <div style={{ width: '10px', height: '10px', borderRadius: '2px', backgroundColor: 'color-mix(in srgb, var(--gold) 35%, transparent)' }} />
           <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginRight: '0.75rem' }}>1</span>
-          <div style={{ width: '10px', height: '10px', borderRadius: '2px', backgroundColor: 'rgba(201,169,110,0.75)' }} />
+          <div style={{ width: '10px', height: '10px', borderRadius: '2px', backgroundColor: 'color-mix(in srgb, var(--gold) 75%, transparent)' }} />
           <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>2</span>
         </div>
       </div>

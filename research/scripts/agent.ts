@@ -401,7 +401,7 @@ function buildEmailHtml(p: {
   <div style="margin-top:56px;padding-top:24px;border-top:1px solid #1E1812;">
     <p style="color:#4A4035;font-size:11px;margin:0;line-height:1.6">
       SELF OS Research Agent · ogni domenica alle 09:00 ·
-      <a href="mailto:noreply@selfos.app" style="color:#4A4035">noreply@selfos.app</a>
+      <a href="mailto:noreply@notification.self-os.space" style="color:#4A4035">noreply@notification.self-os.space</a>
     </p>
   </div>
 
@@ -433,7 +433,7 @@ async function sendResearchEmail(p: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'SELF OS Research <noreply@selfos.app>',
+        from: 'SELF OS Research <noreply@notification.self-os.space>',
         to: ['gabrieleperrone10@gmail.com'],
         subject: `SELF OS Research — ${p.today}`,
         html,

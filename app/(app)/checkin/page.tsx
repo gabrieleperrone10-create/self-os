@@ -430,7 +430,7 @@ export default function CheckinPage() {
                     onClick={() => handleChoiceSelect(opt)}
                     style={{
                       padding: '1rem 1.25rem',
-                      background: currentAnswer === opt ? 'rgba(201,169,110,0.06)' : 'var(--surface)',
+                      background: currentAnswer === opt ? 'color-mix(in srgb, var(--gold) 6%, transparent)' : 'var(--surface)',
                       border: `1px solid ${currentAnswer === opt ? 'var(--gold)' : 'var(--border)'}`,
                       borderRadius: '3px',
                       color: currentAnswer === opt ? 'var(--gold)' : 'var(--text-secondary)',
@@ -441,8 +441,8 @@ export default function CheckinPage() {
                     }}
                     onMouseEnter={e => {
                       if (currentAnswer !== opt) {
-                        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(201,169,110,0.4)';
-                        (e.currentTarget as HTMLElement).style.background = 'rgba(201,169,110,0.03)';
+                        (e.currentTarget as HTMLElement).style.borderColor = 'color-mix(in srgb, var(--gold) 40%, transparent)';
+                        (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--gold) 3%, transparent)';
                       }
                     }}
                     onMouseLeave={e => {
@@ -527,7 +527,7 @@ export default function CheckinPage() {
             {activeExperiments.filter(e => !e.trackedToday).length > 0 && (
               <button
                 onClick={() => { setLabStep(0); transition(() => setStep('lab')); }}
-                style={{ ...outlineBtn, borderColor: 'rgba(201,169,110,0.4)', marginBottom: '1rem', display: 'block', width: 'fit-content' }}
+                style={{ ...outlineBtn, borderColor: 'color-mix(in srgb, var(--gold) 40%, transparent)', marginBottom: '1rem', display: 'block', width: 'fit-content' }}
               >
                 Traccia il Lab ({activeExperiments.filter(e => !e.trackedToday).length}) →
               </button>

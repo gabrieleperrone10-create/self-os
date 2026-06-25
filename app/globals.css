@@ -45,8 +45,8 @@
   --radius-xl: 4px;
 }
 
-/* SELF OS — Single theme (dark only) */
-:root {
+/* SELF OS — Tema Scuro (default) */
+:root, [data-theme="scuro"] {
   --radius: 4px;
 
   /* Core palette */
@@ -83,6 +83,51 @@
   --ring:                 var(--gold);
 }
 
+/* SELF OS — Tema Rituale (contemplativo, salvia + oro) */
+[data-theme="rituale"] {
+  --radius: 16px;
+
+  /* Core palette */
+  --background:       #eef1ea;
+  --surface:          #e4eae0;
+  --border:           rgba(95,131,102,0.18);
+  --text-primary:     #2a312a;
+  --text-secondary:   #5f6b5d;
+  --text-muted:       #8b9488;
+  --gold:             #5f8366;
+
+  /* Block colors */
+  --stato:            #5f8366;
+  --pattern:          #496a52;
+  --credenze:         #6b7f8e;
+  --identita:         #8e6b7f;
+
+  /* Rituale-specific tokens */
+  --rit-card:         rgba(255,255,255,0.55);
+  --rit-card-solid:   #f3f5ef;
+  --rit-gold:         #9c7c3c;
+  --rit-gold-soft:    #b89a5a;
+  --rit-sage-pale:    rgba(95,131,102,0.10);
+
+  /* Mapped to shadcn tokens */
+  --foreground:           var(--text-primary);
+  --card:                 var(--rit-card);
+  --card-foreground:      var(--text-primary);
+  --popover:              var(--rit-card-solid);
+  --popover-foreground:   var(--text-primary);
+  --primary:              #5f8366;
+  --primary-foreground:   #ffffff;
+  --secondary:            var(--surface);
+  --secondary-foreground: var(--text-primary);
+  --muted:                var(--rit-sage-pale);
+  --muted-foreground:     var(--text-secondary);
+  --accent:               var(--rit-sage-pale);
+  --accent-foreground:    #5f8366;
+  --destructive:          #B45454;
+  --input:                var(--border);
+  --ring:                 #5f8366;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -90,8 +135,11 @@
   }
 
   html {
-    /* Force dark always */
     color-scheme: dark;
+  }
+
+  html[data-theme="rituale"] {
+    color-scheme: light;
   }
 
   body {
@@ -104,11 +152,25 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  [data-theme="rituale"] body {
+    background: linear-gradient(170deg, #eef1ea, #e4eae0);
+    font-family: 'Spectral', Georgia, serif;
+  }
+
   h1, h2, h3, h4, h5, h6 {
     font-family: Georgia, 'Times New Roman', serif;
     font-weight: normal;
     letter-spacing: -0.01em;
     color: var(--text-primary);
+  }
+
+  [data-theme="rituale"] h1,
+  [data-theme="rituale"] h2,
+  [data-theme="rituale"] h3,
+  [data-theme="rituale"] h4,
+  [data-theme="rituale"] h5,
+  [data-theme="rituale"] h6 {
+    font-family: 'Spectral', Georgia, serif;
   }
 }
 
@@ -149,8 +211,8 @@
 .animate-stagger > *:nth-child(5) { animation-delay: 0.7s; }
 
 @keyframes micPulse {
-  0%, 100% { box-shadow: 0 0 0 4px rgba(201,169,110,0.12), 0 0 0 8px rgba(201,169,110,0.06); }
-  50%       { box-shadow: 0 0 0 8px rgba(201,169,110,0.18), 0 0 0 16px rgba(201,169,110,0.08); }
+  0%, 100% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--gold) 12%, transparent), 0 0 0 8px color-mix(in srgb, var(--gold) 6%, transparent); }
+  50%       { box-shadow: 0 0 0 8px color-mix(in srgb, var(--gold) 18%, transparent), 0 0 0 16px color-mix(in srgb, var(--gold) 8%, transparent); }
 }
 
 /* ─── Mobile Optimization ──────────────────────────────────── */
@@ -331,7 +393,7 @@ input[type="range"]::-moz-range-thumb {
 
 /* Selection color */
 ::selection {
-  background: rgba(201,169,110,0.2);
+  background: color-mix(in srgb, var(--gold) 20%, transparent);
   color: var(--text-primary);
 }
 
@@ -607,7 +669,7 @@ input[type="range"]::-moz-range-thumb {
 
 /* "Entra come utente" — picker e banner admin (view-as-bar.tsx) */
 .view-as-user-row:hover {
-  background: rgba(201,169,110,0.08) !important;
+  background: color-mix(in srgb, var(--gold) 8%, transparent) !important;
 }
 
 @media (max-width: 768px) {
@@ -625,5 +687,65 @@ input[type="range"]::-moz-range-thumb {
 @media (max-width: 768px) {
   .distanza-grid {
     grid-template-columns: 1fr !important;
+  }
+}
+
+/* ─── Tema Rituale — override per inline styles ─────────────── */
+
+[data-theme="rituale"] .app-sidebar {
+  background: var(--rit-card-solid);
+  border-right: 1px solid var(--border);
+}
+
+[data-theme="rituale"] .mobile-nav {
+  background: rgba(244,246,240,0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-top-color: var(--border);
+}
+
+[data-theme="rituale"] .app-main {
+  background: transparent;
+}
+
+[data-theme="rituale"] ::-webkit-scrollbar-thumb {
+  background: rgba(95,131,102,0.25);
+}
+
+[data-theme="rituale"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(95,131,102,0.4);
+}
+
+[data-theme="rituale"] :focus-visible {
+  outline-color: #5f8366;
+}
+
+[data-theme="rituale"] input[type="range"] {
+  background: rgba(95,131,102,0.18);
+}
+
+[data-theme="rituale"] input[type="range"]::-webkit-slider-thumb {
+  background: #5f8366;
+  border-color: var(--background);
+}
+
+[data-theme="rituale"] input[type="range"]::-moz-range-thumb {
+  background: #5f8366;
+  border-color: var(--background);
+}
+
+/* Rituale breathe animation (momentum ring) */
+@keyframes ritBreathe {
+  0%, 100% { transform: scale(0.92); opacity: 0.7; }
+  50%      { transform: scale(1.06); opacity: 1; }
+}
+
+[data-theme="rituale"] .rit-breathe {
+  animation: ritBreathe 6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="rituale"] .rit-breathe {
+    animation: none !important;
   }
 }

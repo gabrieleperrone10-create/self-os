@@ -217,8 +217,8 @@ function NavLink({
         textDecoration: 'none',
         fontSize: '0.875rem',
         color: active ? 'var(--gold)' : muted ? 'var(--text-muted)' : 'var(--text-secondary)',
-        backgroundColor: active ? 'rgba(201,169,110,0.08)' : 'transparent',
-        border: active ? '1px solid rgba(201,169,110,0.15)' : '1px solid transparent',
+        backgroundColor: active ? 'color-mix(in srgb, var(--gold) 8%, transparent)' : 'transparent',
+        border: active ? '1px solid color-mix(in srgb, var(--gold) 15%, transparent)' : '1px solid transparent',
         transition: 'all 0.3s ease',
       }}
     >

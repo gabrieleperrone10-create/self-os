@@ -27,8 +27,8 @@ function fmtDay(dateStr: string) {
 }
 
 function fmtShort(dateStr: string) {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const dt = new Date(y, m - 1, d);
+  const [, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(2026, m - 1, d);
   return `${DAYS_IT[dt.getDay()]} ${d}`;
 }
 
@@ -47,6 +47,38 @@ const tooltipStyle = {
   fontSize: '0.8rem',
   color: 'var(--text-primary)',
 };
+
+// ─── Spiegazioni metriche ────────────────────────────────────
+
+const METRIC_EXPLAIN = {
+  hrv: {
+    label: 'HRV — Variabilità Cardiaca',
+    what: "Misura quanto varia il tempo tra un battito e l'altro — non la velocità del cuore, ma la sua flessibilità. È un segnale del sistema nervoso autonomo.",
+    meaning: "Più alto = sistema nervoso adattabile, buon recupero. Più basso = il corpo sta gestendo qualcosa. Il delta (±) è rispetto alla tua media personale (baseline).",
+  },
+  hr: {
+    label: 'FC — Frequenza Cardiaca a Riposo',
+    what: 'Battiti al minuto a riposo, misurati dal sensore durante il sonno.',
+    meaning: "Più bassa = cuore efficiente, buon recupero. Un aumento improvviso può segnalare stress accumulato, poco sonno, o inizio di malattia.",
+  },
+  sleep: {
+    label: 'Sonno — Ore Totali',
+    what: "Ore dormite nella notte che precede questo giorno. Dato da Apple Health.",
+    meaning: "Principale modulatore dell'HRV: notti corte (<6h) o frammentate tendono a deprimere la variabilità cardiaca il giorno dopo.",
+  },
+  steps: {
+    label: 'Passi — Movimento Giornaliero',
+    what: 'Totale passi contati dal telefono o bracciale durante la giornata.',
+    meaning: "Proxy grezzo: giornate sedentarie vs attive. Non distingue tra camminata attiva e spostamenti.",
+  },
+  convergence: {
+    label: 'Convergenza — Corpo vs Mente',
+    what: "Confronta il tuo stato dichiarato nel check-in serale (1-10) con la risposta del corpo misurata il giorno dopo (HRV rispetto alla baseline).",
+    meaning: "Quando divergono, il corpo sta raccontando una storia diversa da quella che percepisci. Succede spesso dopo giornate intense mascherate da \"va tutto bene\".",
+  },
+} as const;
+
+// ─── Types ───────────────────────────────────────────────────
 
 type Props = {
   hasBiometrics: boolean;
@@ -69,6 +101,8 @@ type Props = {
   insightVersion: number | null;
   insightCreatedAt: string | null;
 };
+
+// ─── Sub-components ──────────────────────────────────────────
 
 function SummaryCard({
   label, value, unit, delta, higherIsBetter = true, empty, note,
@@ -124,6 +158,36 @@ function CategoryBadge({ category }: { category: string | null }) {
   );
 }
 
+function MetricDetail({ label, value, suffix, delta, explain }: {
+  label: string; value: string; suffix?: string; delta?: number | null; explain: string;
+}) {
+  return (
+    <div style={{ marginBottom: '0.75rem' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+        <span style={{ fontSize: '0.58rem', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', minWidth: '48px' }}>
+          {label}
+        </span>
+        <span style={{ fontFamily: 'Georgia, serif', fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+          {value}
+          {suffix && <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginLeft: '0.15rem' }}>{suffix}</span>}
+          {delta != null && (
+            <span style={{ fontSize: '0.72rem', marginLeft: '0.4rem', color: delta > 2 ? 'var(--pattern)' : delta < -2 ? '#B87171' : 'var(--text-muted)' }}>
+              {delta > 0 ? '+' : ''}{delta} vs baseline
+            </span>
+          )}
+        </span>
+      </div>
+      <p style={{
+        fontSize: '0.68rem', color: 'var(--text-muted)', lineHeight: 1.5,
+        marginTop: '0.15rem', marginLeft: '48px', paddingLeft: '0.5rem',
+        borderLeft: '1px solid var(--border)',
+      }}>
+        {explain}
+      </p>
+    </div>
+  );
+}
+
 function DateFilterBar({
   selectedDays, rangeFrom, rangeTo,
 }: {
@@ -131,22 +195,16 @@ function DateFilterBar({
 }) {
   const router = useRouter();
   const [customFrom, setCustomFrom] = useState(rangeFrom);
-  const [customTo,   setCustomTo]   = useState(rangeTo);
+  const [customTo, setCustomTo] = useState(rangeTo);
   const [showCustom, setShowCustom] = useState(false);
 
-  function setPreset(days: number) {
-    router.push(`/biometrics?days=${days}`);
-  }
-
+  function setPreset(days: number) { router.push(`/biometrics?days=${days}`); }
   function applyCustom() {
     if (customFrom && customTo && customFrom <= customTo) {
       router.push(`/biometrics?from=${customFrom}&to=${customTo}`);
     }
   }
-
-  function setAll() {
-    router.push('/biometrics?days=all');
-  }
+  function setAll() { router.push('/biometrics?days=all'); }
 
   const presets = [7, 30, 90] as const;
   const isAll = selectedDays >= 3650;
@@ -158,15 +216,11 @@ function DateFilterBar({
           key={d}
           onClick={() => setPreset(d)}
           style={{
-            padding: '0.35rem 0.75rem',
-            background: 'transparent',
+            padding: '0.35rem 0.75rem', background: 'transparent',
             border: `1px solid ${selectedDays === d && !showCustom && !isAll ? 'var(--gold)' : 'var(--border)'}`,
             borderRadius: '3px',
             color: selectedDays === d && !showCustom && !isAll ? 'var(--gold)' : 'var(--text-muted)',
-            fontFamily: 'Georgia, serif',
-            fontSize: '0.75rem',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
+            fontFamily: 'Georgia, serif', fontSize: '0.75rem', cursor: 'pointer', transition: 'all 0.2s ease',
           }}
         >
           {d}g
@@ -175,15 +229,10 @@ function DateFilterBar({
       <button
         onClick={setAll}
         style={{
-          padding: '0.35rem 0.75rem',
-          background: 'transparent',
+          padding: '0.35rem 0.75rem', background: 'transparent',
           border: `1px solid ${isAll ? 'var(--gold)' : 'var(--border)'}`,
-          borderRadius: '3px',
-          color: isAll ? 'var(--gold)' : 'var(--text-muted)',
-          fontFamily: 'Georgia, serif',
-          fontSize: '0.75rem',
-          cursor: 'pointer',
-          transition: 'all 0.2s ease',
+          borderRadius: '3px', color: isAll ? 'var(--gold)' : 'var(--text-muted)',
+          fontFamily: 'Georgia, serif', fontSize: '0.75rem', cursor: 'pointer', transition: 'all 0.2s ease',
         }}
       >
         Tutto
@@ -191,45 +240,25 @@ function DateFilterBar({
       <button
         onClick={() => setShowCustom(v => !v)}
         style={{
-          padding: '0.35rem 0.75rem',
-          background: 'transparent',
+          padding: '0.35rem 0.75rem', background: 'transparent',
           border: `1px solid ${showCustom ? 'var(--gold)' : 'var(--border)'}`,
-          borderRadius: '3px',
-          color: showCustom ? 'var(--gold)' : 'var(--text-muted)',
-          fontFamily: 'Georgia, serif',
-          fontSize: '0.75rem',
-          cursor: 'pointer',
-          transition: 'all 0.2s ease',
+          borderRadius: '3px', color: showCustom ? 'var(--gold)' : 'var(--text-muted)',
+          fontFamily: 'Georgia, serif', fontSize: '0.75rem', cursor: 'pointer', transition: 'all 0.2s ease',
         }}
       >
         Personalizzato
       </button>
       {showCustom && (
         <>
-          <input
-            type="date"
-            value={customFrom}
-            onChange={e => setCustomFrom(e.target.value)}
-            style={dateInputStyle}
-          />
+          <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} style={dateInputStyle} />
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>→</span>
-          <input
-            type="date"
-            value={customTo}
-            onChange={e => setCustomTo(e.target.value)}
-            style={dateInputStyle}
-          />
+          <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)} style={dateInputStyle} />
           <button
             onClick={applyCustom}
             style={{
-              padding: '0.35rem 0.75rem',
-              background: 'transparent',
-              border: '1px solid var(--gold)',
-              borderRadius: '3px',
-              color: 'var(--gold)',
-              fontFamily: 'Georgia, serif',
-              fontSize: '0.75rem',
-              cursor: 'pointer',
+              padding: '0.35rem 0.75rem', background: 'transparent',
+              border: '1px solid var(--gold)', borderRadius: '3px', color: 'var(--gold)',
+              fontFamily: 'Georgia, serif', fontSize: '0.75rem', cursor: 'pointer',
             }}
           >
             Applica
@@ -241,48 +270,108 @@ function DateFilterBar({
 }
 
 const dateInputStyle: React.CSSProperties = {
-  padding: '0.3rem 0.5rem',
-  background: 'var(--surface)',
-  border: '1px solid var(--border)',
-  borderRadius: '3px',
-  color: 'var(--text-secondary)',
-  fontFamily: 'Georgia, serif',
-  fontSize: '0.75rem',
-  colorScheme: 'dark',
+  padding: '0.3rem 0.5rem', background: 'var(--surface)',
+  border: '1px solid var(--border)', borderRadius: '3px',
+  color: 'var(--text-secondary)', fontFamily: 'Georgia, serif',
+  fontSize: '0.75rem', colorScheme: 'dark',
 };
+
+function WatchSyncBadge({ lastWatchAt }: { lastWatchAt: string | null }) {
+  const [label, setLabel] = useState<string | null>(null);
+  const [isStale, setIsStale] = useState(false);
+
+  useEffect(() => {
+    if (!lastWatchAt) {
+      setLabel('watch mai sincronizzato');
+      setIsStale(true);
+      return;
+    }
+    const ts = new Date(lastWatchAt).getTime();
+    const diffH = (Date.now() - ts) / 3600000;
+    let text: string;
+    if (diffH < 1) text = 'watch sincronizzato < 1h fa';
+    else if (diffH < 6) text = `watch sincronizzato ${Math.floor(diffH)}h fa`;
+    else if (diffH < 24) text = `watch: ultimo dato ${Math.floor(diffH)}h fa`;
+    else {
+      const d = Math.floor(diffH / 24);
+      text = `watch: ultimo dato ${d} ${d === 1 ? 'giorno' : 'giorni'} fa`;
+    }
+    setLabel(text);
+    setIsStale(diffH >= 4);
+  }, [lastWatchAt]);
+
+  if (!label) return null;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.75rem' }}>
+      <span style={{
+        display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%',
+        background: isStale ? '#B87171' : 'var(--pattern)', flexShrink: 0,
+      }} />
+      <span style={{ fontSize: '0.72rem', color: isStale ? '#B87171' : 'var(--text-muted)' }}>{label}</span>
+    </div>
+  );
+}
+
+// ─── Convergence logic ───────────────────────────────────────
+
+function getConvergence(declared: number | null, delta: number | null) {
+  if (declared === null || delta === null) return null;
+  if (declared <= 4 && delta < -2) return {
+    label: 'il corpo ha seguito',
+    color: '#B87171',
+    detail: `Hai dichiarato ${declared}/10. Il corpo conferma: HRV ${delta}ms sotto la baseline. Mente e corpo sono allineati — entrambi segnalano difficoltà.`,
+  };
+  if (declared >= 7 && delta > 2) return {
+    label: 'corpo in linea',
+    color: 'var(--pattern)',
+    detail: `Hai dichiarato ${declared}/10. Il corpo conferma: HRV +${delta}ms sopra la baseline. Ciò che percepisci corrisponde a ciò che il corpo registra.`,
+  };
+  if (declared <= 4 && delta > 2) return {
+    label: 'corpo in controtendenza',
+    color: 'var(--gold)',
+    detail: `Hai dichiarato ${declared}/10, ma il corpo dice altro: HRV +${delta}ms sopra la baseline. Forse stai sottovalutando come stai — o il corpo non ha ancora reagito.`,
+  };
+  if (declared >= 7 && delta < -2) return {
+    label: 'corpo in controtendenza',
+    color: 'var(--gold)',
+    detail: `Hai dichiarato ${declared}/10, ma il corpo dice altro: HRV ${delta}ms sotto la baseline. Forse stai ignorando un segnale — o mascherando il carico.`,
+  };
+  return null;
+}
+
+// ─── Main component ──────────────────────────────────────────
 
 export function BiometricsCharts({
   hasBiometrics, dataDays, totalSamples, hasCalendar, hasHrv,
   selectedDays, rangeFrom, rangeTo,
   dailyHrv, dailyHr, dailySteps, dailySleep,
-  hrvBaseline, correlations,
-  todaySummary, allMetrics,
+  hrvBaseline, correlations, todaySummary,
+  allMetrics,
   initialInsight, insightVersion, insightCreatedAt,
 }: Props) {
   const router = useRouter();
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
+  const [showRawData, setShowRawData] = useState(false);
 
-  // Auto-refresh ogni 15 minuti (allineato con Health Auto Export)
+  void allMetrics;
+
   useEffect(() => {
     const id = setInterval(() => router.refresh(), 15 * 60 * 1000);
     return () => clearInterval(id);
   }, [router]);
 
-  // Sonno più recente disponibile (ore dormite l'ultima notte registrata)
   const latestSleep = dailySleep.length > 0 ? dailySleep[dailySleep.length - 1] : null;
-
-  // Merge serie per il chart — usa intervallo corretto per x-axis
   const chartInterval = selectedDays > 30 ? Math.floor(selectedDays / 10) : selectedDays > 14 ? 3 : 0;
 
   const timeline = correlations.map(day => ({
     label: fmtShort(day.date),
     date: day.date,
-    hrv:   day.hrv,
-    hr:    day.hr,
+    hrv: day.hrv,
+    hr: day.hr,
     steps: day.steps,
   }));
 
-  // Giorni con dati per non mostrare righe completamente vuote
   const daysWithData = correlations.filter(d =>
     d.hrv !== null || d.hr !== null || d.steps !== null || d.sleep !== null || d.eventsBefore.length > 0
   );
@@ -298,18 +387,18 @@ export function BiometricsCharts({
             Corpo
           </h1>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Biometrici e calendario — come il corpo risponde a ciò che fai
+            Come il corpo risponde a ciò che fai — e cosa rivela di ciò che non ti dici
           </p>
         </div>
         <div style={{ textAlign: 'right' }}>
           {totalSamples > 0 && (
             <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-              {totalSamples.toLocaleString('it-IT')} campioni in archivio
+              {totalSamples.toLocaleString('it-IT')} campioni
             </p>
           )}
           {hasBiometrics && samples_shown(correlations) === 0 && totalSamples > 0 && (
             <p style={{ fontSize: '0.7rem', color: '#B87171', marginTop: '0.2rem' }}>
-              0 campioni nel range selezionato — prova a estendere il periodo
+              0 campioni nel range — prova a estendere il periodo
             </p>
           )}
         </div>
@@ -337,7 +426,7 @@ export function BiometricsCharts({
         </div>
       )}
 
-      {/* Avviso: nessun dato biometrico */}
+      {/* Avviso: nessun dato */}
       {!hasBiometrics && (
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '3px', padding: '3rem 2rem', textAlign: 'center', marginBottom: '1.5rem' }}>
           <p style={{ fontFamily: 'Georgia, serif', fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '0.75rem' }}>Nessun dato biometrico</p>
@@ -381,282 +470,238 @@ export function BiometricsCharts({
         </div>
       )}
 
-      {/* Ultimo sync watch */}
+      {/* Watch sync */}
       {hasBiometrics && <WatchSyncBadge lastWatchAt={todaySummary.lastWatchAt} />}
 
-      {/* Summary cards */}
+      {/* ══════ HERO: Interpretazione AI ══════ */}
+      <BiometricsInsightButton
+        hasBiometrics={hasBiometrics}
+        initialInsight={initialInsight}
+        version={insightVersion}
+        createdAt={insightCreatedAt}
+      />
+
+      {/* ══════ MAIN: Convergenza giorno per giorno ══════ */}
       {hasBiometrics && (
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-          <SummaryCard
-            label="HRV recente"
-            value={todaySummary.hrv}
-            unit="ms"
-            delta={todaySummary.hrv !== null && hrvBaseline !== null ? Math.round((todaySummary.hrv - hrvBaseline) * 10) / 10 : null}
-            higherIsBetter
-            empty="bracciale non sincronizzato"
-            note={todaySummary.hrvDate && todaySummary.hrvDate < rangeTo ? 'ieri notte' : null}
-          />
-          <SummaryCard
-            label="FC a riposo"
-            value={todaySummary.hr}
-            unit="bpm"
-            higherIsBetter={false}
-            empty="nessun dato"
-            note={todaySummary.hrDate && todaySummary.hrDate < rangeTo ? 'ieri' : null}
-          />
-          <SummaryCard
-            label="Sonno"
-            value={latestSleep?.value ?? null}
-            unit="h"
-            higherIsBetter
-            empty="nessun dato sonno"
-            note={latestSleep && latestSleep.date < rangeTo ? 'ultima notte' : null}
-          />
-          <SummaryCard
-            label="Passi"
-            value={todaySummary.steps}
-            unit=""
-            empty="nessun dato"
-            note={todaySummary.stepsDate && todaySummary.stepsDate < rangeTo ? 'ieri' : null}
-          />
-          {hrvBaseline !== null && (
-            <SummaryCard label="Baseline HRV" value={hrvBaseline} unit="ms" />
-          )}
-        </div>
-      )}
-
-      {/* Timeline chart */}
-      {hasBiometrics && timeline.length > 0 && (
-        <div style={{
-          background: 'var(--surface)', border: '1px solid var(--border)',
-          borderRadius: '3px', padding: '1.5rem', marginBottom: '1.5rem',
-        }}>
-          <p style={{ fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
-            Timeline — {selectedDays} giorni
-          </p>
-
-          {(dailyHrv.length > 0 || dailyHr.length > 0) ? (
-            <ResponsiveContainer width="100%" height={200}>
-              <ComposedChart data={timeline} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
-                <CartesianGrid stroke="var(--border)" strokeDasharray="2 4" vertical={false} />
-                <XAxis
-                  dataKey="label"
-                  tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Georgia, serif' }}
-                  tickLine={false}
-                  axisLine={false}
-                  interval={chartInterval}
-                />
-                <YAxis yAxisId="hrv" orientation="left" tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Georgia, serif' }} tickLine={false} axisLine={false} domain={['auto', 'auto']} />
-                {dailyHr.length > 0 && (
-                  <YAxis yAxisId="hr" orientation="right" tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Georgia, serif' }} tickLine={false} axisLine={false} domain={['auto', 'auto']} />
-                )}
-                <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: 'var(--border)' }} />
-                {hrvBaseline !== null && (
-                  <ReferenceLine yAxisId="hrv" y={hrvBaseline} stroke="var(--gold)" strokeDasharray="3 3" strokeOpacity={0.4} />
-                )}
-                {dailyHrv.length > 0 && (
-                  <Line yAxisId="hrv" type="monotone" dataKey="hrv" name="HRV (ms)" stroke="var(--pattern)" strokeWidth={1.5} dot={false} connectNulls={false} />
-                )}
-                {dailyHr.length > 0 && (
-                  <Line yAxisId="hr" type="monotone" dataKey="hr" name="FC riposo (bpm)" stroke="var(--identita)" strokeWidth={1.5} dot={false} connectNulls={false} />
-                )}
-              </ComposedChart>
-            </ResponsiveContainer>
-          ) : dailySteps.length > 0 ? (
-            <ResponsiveContainer width="100%" height={160}>
-              <ComposedChart data={timeline} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
-                <CartesianGrid stroke="var(--border)" strokeDasharray="2 4" vertical={false} />
-                <XAxis dataKey="label" tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Georgia, serif' }} tickLine={false} axisLine={false} interval={chartInterval} />
-                <YAxis yAxisId="s" tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Georgia, serif' }} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Bar yAxisId="s" dataKey="steps" name="Passi" fill="var(--gold)" fillOpacity={0.3} radius={[2, 2, 0, 0]} />
-              </ComposedChart>
-            </ResponsiveContainer>
-          ) : (
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', padding: '2rem 0' }}>
-              Nessun dato nel periodo — prova ad estendere il range
-            </p>
-          )}
-
-          {/* Legenda */}
-          <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1rem', flexWrap: 'wrap' }}>
-            {dailyHrv.length > 0 && <LegendDot color="var(--pattern)" label="HRV (ms)" />}
-            {dailyHr.length > 0  && <LegendDot color="var(--identita)" label="FC riposo (bpm)" />}
-            {hrvBaseline !== null && <LegendDashed label={`Baseline ${hrvBaseline}ms`} />}
-          </div>
-        </div>
-      )}
-
-      {/* Correlazione giorni ↔ eventi */}
-      {hasBiometrics && (
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '3px', overflow: 'hidden', marginBottom: '1.5rem' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '3px', overflow: 'hidden', marginTop: '1.5rem' }}>
           <div style={{ padding: '1.25rem 1.5rem 0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <p style={{ fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-              Corpo di oggi · cosa l&apos;ha preceduto (sera prima)
+              Corpo ↔ Mente — giorno per giorno
             </p>
-            {daysEmpty > 0 && (
-              <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-                {daysEmpty} giorni senza dati nascosti
-              </p>
-            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              {daysEmpty > 0 && (
+                <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                  {daysEmpty} giorni senza dati nascosti
+                </p>
+              )}
+              <button
+                onClick={() => setShowGuide(!showGuide)}
+                style={{
+                  background: 'none', border: `1px solid ${showGuide ? 'var(--gold)' : 'var(--border)'}`,
+                  borderRadius: '3px', color: showGuide ? 'var(--gold)' : 'var(--text-muted)',
+                  fontSize: '0.65rem', cursor: 'pointer', padding: '0.15rem 0.5rem',
+                  fontFamily: 'Georgia, serif', transition: 'all 0.2s ease',
+                }}
+              >
+                {showGuide ? 'chiudi guida' : 'come leggere'}
+              </button>
+            </div>
           </div>
 
+          {/* Guide */}
+          {showGuide && (
+            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--border)', background: 'rgba(201,169,110,0.03)' }}>
+              <p style={{ fontFamily: 'Georgia, serif', fontSize: '0.82rem', color: 'var(--text-primary)', lineHeight: 1.7, marginBottom: '1rem' }}>
+                Ogni riga mostra un giorno. Il corpo di oggi viene confrontato con ciò che è successo la sera prima — eventi, stato dichiarato, sonno.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                {Object.entries(METRIC_EXPLAIN).map(([key, info]) => (
+                  <div key={key}>
+                    <p style={{ fontSize: '0.72rem', color: 'var(--gold)', fontFamily: 'Georgia, serif', marginBottom: '0.15rem' }}>
+                      {info.label}
+                    </p>
+                    <p style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                      {info.what}
+                    </p>
+                    <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', lineHeight: 1.5, fontStyle: 'italic' }}>
+                      {info.meaning}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border)' }}>
+                <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                  Il bordo sinistro indica: <span style={{ color: 'var(--pattern)' }}>verde</span> = HRV sopra la tua media, <span style={{ color: '#B87171' }}>rosso</span> = sotto. Clicca una riga per i dettagli.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Empty state */}
           {daysWithData.length === 0 && (
             <div style={{ padding: '2rem', textAlign: 'center' }}>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                 Nessun dato nel periodo selezionato.<br />
-                {totalSamples > 0 ? `Hai ${totalSamples.toLocaleString('it-IT')} campioni in archivio — prova a estendere il range (90g o personalizzato).` : 'Attendi il prossimo export di Health Auto Export.'}
+                {totalSamples > 0 ? `Hai ${totalSamples.toLocaleString('it-IT')} campioni in archivio — prova a estendere il range.` : 'Attendi il prossimo export di Health Auto Export.'}
               </p>
             </div>
           )}
 
-          {daysWithData.slice().reverse().map((day, i) => {
+          {/* Day rows — convergence first */}
+          {daysWithData.slice().reverse().map((day) => {
             const positive = day.hrvDelta !== null && day.hrvDelta > 2;
             const negative = day.hrvDelta !== null && day.hrvDelta < -2;
             const isExpanded = expandedDay === day.date;
+            const conv = getConvergence(day.declaredBefore, day.hrvDelta);
 
             return (
               <div key={day.date}>
                 <div
                   onClick={() => setExpandedDay(isExpanded ? null : day.date)}
                   style={{
-                    display: 'flex', gap: '1rem', alignItems: 'flex-start',
+                    display: 'flex', gap: '0.75rem', alignItems: 'flex-start',
                     padding: '0.875rem 1.5rem',
                     borderTop: '1px solid var(--border)',
                     borderLeft: positive ? '3px solid var(--pattern)' : negative ? '3px solid #B87171' : '3px solid transparent',
-                    cursor: 'pointer',
-                    transition: 'background 0.15s ease',
+                    cursor: 'pointer', transition: 'background 0.15s ease',
                   }}
                   onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
-                  {/* Data */}
-                  <div style={{ minWidth: '100px' }}>
+                  {/* Date */}
+                  <div style={{ minWidth: '90px' }}>
                     <p style={{ fontFamily: 'Georgia, serif', fontSize: '0.82rem', color: 'var(--text-primary)' }}>{fmtDay(day.date)}</p>
                   </div>
 
-                  {/* Biometrici */}
-                  <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', flex: 1 }}>
-                    {day.hrv !== null && (
-                      <div>
-                        <p style={{ fontSize: '0.58rem', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>HRV</p>
-                        <p style={{ fontFamily: 'Georgia, serif', fontSize: '0.9rem', color: positive ? 'var(--pattern)' : negative ? '#B87171' : 'var(--text-primary)' }}>
-                          {day.hrv}ms
-                          {day.hrvDelta !== null && (
-                            <span style={{ fontSize: '0.72rem', marginLeft: '0.3rem', color: 'var(--text-muted)' }}>
-                              {day.hrvDelta > 0 ? '+' : ''}{day.hrvDelta}
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    )}
-                    {day.hr !== null && (
-                      <div>
-                        <p style={{ fontSize: '0.58rem', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>FC</p>
-                        <p style={{ fontFamily: 'Georgia, serif', fontSize: '0.9rem', color: 'var(--text-primary)' }}>{day.hr}bpm</p>
-                      </div>
-                    )}
-                    {day.sleep !== null && (
-                      <div>
-                        <p style={{ fontSize: '0.58rem', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Sonno</p>
-                        <p style={{ fontFamily: 'Georgia, serif', fontSize: '0.9rem', color: 'var(--text-primary)' }}>{day.sleep}h</p>
-                      </div>
-                    )}
-                    {day.steps !== null && (
-                      <div>
-                        <p style={{ fontSize: '0.58rem', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Passi</p>
-                        <p style={{ fontFamily: 'Georgia, serif', fontSize: '0.9rem', color: 'var(--text-primary)' }}>{day.steps.toLocaleString('it-IT')}</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Convergenza: stato dichiarato sera prima vs HRV delta di oggi */}
-                  {(() => {
-                    const declared = day.declaredBefore;
-                    const delta = day.hrvDelta;
-                    let convergenceLabel: string | null = null;
-                    let convergenceColor: string | null = null;
-                    if (declared !== null && delta !== null) {
-                      if (declared <= 4 && delta < -2) {
-                        convergenceLabel = 'il corpo ha seguito';
-                        convergenceColor = '#B87171';
-                      } else if (declared >= 7 && delta > 2) {
-                        convergenceLabel = 'corpo in linea';
-                        convergenceColor = 'var(--pattern)';
-                      } else if (declared <= 4 && delta > 2) {
-                        convergenceLabel = 'corpo in controtendenza';
-                        convergenceColor = 'var(--gold)';
-                      } else if (declared >= 7 && delta < -2) {
-                        convergenceLabel = 'corpo in controtendenza';
-                        convergenceColor = 'var(--gold)';
-                      }
-                    }
-                    if (declared === null) return null;
-                    return (
-                      <div style={{ minWidth: '120px' }}>
-                        <p style={{ fontSize: '0.58rem', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.2rem' }}>
-                          Sera prima: {declared}/10
-                        </p>
-                        {convergenceLabel && convergenceColor && (
-                          <span style={{ fontSize: '0.72rem', color: convergenceColor }}>
-                            {convergenceLabel}
+                  {/* Convergence + compact metrics */}
+                  <div style={{ flex: 1 }}>
+                    {conv && (
+                      <div style={{ marginBottom: '0.3rem' }}>
+                        <span style={{ fontFamily: 'Georgia, serif', fontSize: '0.82rem', color: conv.color }}>
+                          {conv.label}
+                        </span>
+                        {day.declaredBefore !== null && (
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: '0.5rem' }}>
+                            sera prima: {day.declaredBefore}/10
                           </span>
                         )}
                       </div>
-                    );
-                  })()}
-
-                  {/* Riepilogo eventi sera prima */}
-                  {day.eventsBefore.length > 0 && (
-                    <div style={{ minWidth: '180px', maxWidth: '280px' }}>
-                      <p style={{ fontSize: '0.55rem', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.2rem' }}>
-                        Sera prima
-                      </p>
-                      {day.eventsBefore.slice(0, isExpanded ? day.eventsBefore.length : 2).map((ev, j) => (
-                        <div key={j} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem', flexWrap: 'wrap' }}>
-                          <p style={{
-                            fontSize: '0.73rem', color: 'var(--text-secondary)',
-                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                            maxWidth: '180px',
-                          }}>
-                            {ev.title}
-                          </p>
-                          <CategoryBadge category={ev.category} />
-                        </div>
-                      ))}
-                      {!isExpanded && day.eventsBefore.length > 2 && (
-                        <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>+{day.eventsBefore.length - 2} altri</p>
+                    )}
+                    {day.declaredBefore !== null && !conv && (
+                      <div style={{ marginBottom: '0.3rem' }}>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                          sera prima: {day.declaredBefore}/10
+                        </span>
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                      {day.hrv !== null && (
+                        <span style={{ fontSize: '0.75rem', color: positive ? 'var(--pattern)' : negative ? '#B87171' : 'var(--text-secondary)' }}>
+                          HRV {day.hrv}ms
+                          {day.hrvDelta !== null && (
+                            <span style={{ fontSize: '0.68rem', marginLeft: '0.2rem', color: 'var(--text-muted)' }}>
+                              ({day.hrvDelta > 0 ? '+' : ''}{day.hrvDelta})
+                            </span>
+                          )}
+                        </span>
+                      )}
+                      {day.sleep !== null && (
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Sonno {day.sleep}h</span>
+                      )}
+                      {day.hr !== null && (
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>FC {day.hr}bpm</span>
+                      )}
+                      {day.steps !== null && (
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{day.steps.toLocaleString('it-IT')} passi</span>
                       )}
                     </div>
+                  </div>
+
+                  {/* Events count */}
+                  {day.eventsBefore.length > 0 && (
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', alignSelf: 'center' }}>
+                      {day.eventsBefore.length} {day.eventsBefore.length === 1 ? 'evento' : 'eventi'}
+                    </span>
                   )}
 
-                  {/* Expand indicator */}
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem', marginLeft: 'auto', alignSelf: 'center' }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem', alignSelf: 'center' }}>
                     {isExpanded ? '▲' : '▼'}
                   </span>
                 </div>
 
-                {/* Expanded day detail */}
+                {/* Expanded detail */}
                 {isExpanded && (
                   <div style={{
-                    padding: '0.75rem 1.5rem 1rem 1.5rem',
-                    borderTop: '1px solid var(--border)',
+                    padding: '1rem 1.5rem 1.25rem', borderTop: '1px solid var(--border)',
                     background: 'rgba(255,255,255,0.015)',
                   }}>
-                    <p style={{ fontSize: '0.65rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
+                    <p style={{ fontSize: '0.65rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '1rem' }}>
                       {fmtFull(day.date)}
                     </p>
-                    {day.eventsBefore.length > 0 ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        {day.eventsBefore.map((ev, j) => (
-                          <div key={j} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                            <CategoryBadge category={ev.category} />
-                            <span style={{ fontSize: '0.82rem', color: 'var(--text-primary)' }}>{ev.title}</span>
-                          </div>
-                        ))}
+
+                    {/* Convergence detail */}
+                    {day.declaredBefore !== null && (
+                      <div style={{ marginBottom: '1.25rem' }}>
+                        <p style={{ fontSize: '0.58rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '0.4rem' }}>
+                          Convergenza corpo ↔ mente
+                        </p>
+                        {conv ? (
+                          <p style={{ fontFamily: 'Georgia, serif', fontSize: '0.82rem', color: 'var(--text-primary)', lineHeight: 1.7 }}>
+                            {conv.detail}
+                          </p>
+                        ) : (
+                          <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                            Check-in serale: {day.declaredBefore}/10.
+                            {day.hrvDelta !== null
+                              ? ` HRV: ${day.hrvDelta > 0 ? '+' : ''}${day.hrvDelta}ms vs baseline. Variazione non significativa.`
+                              : ' HRV non disponibile — serve il bracciale per il confronto.'}
+                          </p>
+                        )}
                       </div>
-                    ) : (
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Nessun evento nel calendario la sera prima</p>
+                    )}
+
+                    {/* Metrics with explanations */}
+                    {(day.hrv !== null || day.hr !== null || day.sleep !== null || day.steps !== null) && (
+                      <div style={{ marginBottom: '1.25rem' }}>
+                        <p style={{ fontSize: '0.58rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.6rem' }}>
+                          Metriche
+                        </p>
+                        {day.hrv !== null && (
+                          <MetricDetail label="HRV" value={`${day.hrv}`} suffix="ms" delta={day.hrvDelta} explain={METRIC_EXPLAIN.hrv.meaning} />
+                        )}
+                        {day.hr !== null && (
+                          <MetricDetail label="FC" value={`${day.hr}`} suffix="bpm" explain={METRIC_EXPLAIN.hr.meaning} />
+                        )}
+                        {day.sleep !== null && (
+                          <MetricDetail label="Sonno" value={`${day.sleep}`} suffix="h" explain={METRIC_EXPLAIN.sleep.meaning} />
+                        )}
+                        {day.steps !== null && (
+                          <MetricDetail label="Passi" value={day.steps.toLocaleString('it-IT')} explain={METRIC_EXPLAIN.steps.meaning} />
+                        )}
+                      </div>
+                    )}
+
+                    {/* Events */}
+                    {day.eventsBefore.length > 0 && (
+                      <div>
+                        <p style={{ fontSize: '0.58rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
+                          Eventi la sera prima
+                        </p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                          {day.eventsBefore.map((ev, j) => (
+                            <div key={j} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                              <CategoryBadge category={ev.category} />
+                              <span style={{ fontSize: '0.82rem', color: 'var(--text-primary)' }}>{ev.title}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {day.eventsBefore.length === 0 && day.declaredBefore === null && (
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                        Nessun evento e nessun check-in serale per questo giorno.
+                      </p>
                     )}
                   </div>
                 )}
@@ -666,85 +711,119 @@ export function BiometricsCharts({
         </div>
       )}
 
-      {/* Interpretazione AI */}
-      <BiometricsInsightButton
-        hasBiometrics={hasBiometrics}
-        initialInsight={initialInsight}
-        version={insightVersion}
-        createdAt={insightCreatedAt}
-      />
-
-      {/* Metriche disponibili */}
-      {allMetrics.length > 0 && (
+      {/* ══════ SECONDARY: Dati grezzi (collapsible) ══════ */}
+      {hasBiometrics && (
         <div style={{ marginTop: '1.5rem' }}>
-          <p style={{ fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.6rem' }}>
-            Metriche in archivio ({allMetrics.length})
-          </p>
-          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-            {allMetrics.map(m => (
-              <span key={m} style={{
-                fontSize: '0.68rem', color: 'var(--text-muted)', background: 'var(--surface)',
-                border: '1px solid var(--border)', borderRadius: '2px', padding: '0.15rem 0.45rem',
-              }}>
-                {m.replace(/_/g, ' ')}
-              </span>
-            ))}
-          </div>
+          <button
+            onClick={() => setShowRawData(!showRawData)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              background: 'none', border: 'none', cursor: 'pointer',
+              padding: '0.5rem 0', width: '100%', textAlign: 'left',
+              fontFamily: 'Georgia, serif',
+            }}
+          >
+            <span style={{ fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+              Dati grezzi e timeline
+            </span>
+            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+              {showRawData ? '▲' : '▼'}
+            </span>
+          </button>
+
+          {showRawData && (
+            <>
+              {/* Summary cards */}
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem', marginTop: '0.75rem' }}>
+                <SummaryCard
+                  label="HRV recente" value={todaySummary.hrv} unit="ms"
+                  delta={todaySummary.hrv !== null && hrvBaseline !== null ? Math.round((todaySummary.hrv - hrvBaseline) * 10) / 10 : null}
+                  higherIsBetter empty="bracciale non sincronizzato"
+                  note={todaySummary.hrvDate && todaySummary.hrvDate < rangeTo ? 'ieri notte' : null}
+                />
+                <SummaryCard
+                  label="FC a riposo" value={todaySummary.hr} unit="bpm"
+                  higherIsBetter={false} empty="nessun dato"
+                  note={todaySummary.hrDate && todaySummary.hrDate < rangeTo ? 'ieri' : null}
+                />
+                <SummaryCard
+                  label="Sonno" value={latestSleep?.value ?? null} unit="h"
+                  higherIsBetter empty="nessun dato sonno"
+                  note={latestSleep && latestSleep.date < rangeTo ? 'ultima notte' : null}
+                />
+                <SummaryCard
+                  label="Passi" value={todaySummary.steps} unit=""
+                  empty="nessun dato"
+                  note={todaySummary.stepsDate && todaySummary.stepsDate < rangeTo ? 'ieri' : null}
+                />
+                {hrvBaseline !== null && (
+                  <SummaryCard label="Baseline HRV" value={hrvBaseline} unit="ms" />
+                )}
+              </div>
+
+              {/* Timeline chart */}
+              {timeline.length > 0 && (
+                <div style={{
+                  background: 'var(--surface)', border: '1px solid var(--border)',
+                  borderRadius: '3px', padding: '1.5rem', marginBottom: '1.5rem',
+                }}>
+                  <p style={{ fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
+                    Timeline — {selectedDays} giorni
+                  </p>
+
+                  {(dailyHrv.length > 0 || dailyHr.length > 0) ? (
+                    <ResponsiveContainer width="100%" height={200}>
+                      <ComposedChart data={timeline} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
+                        <CartesianGrid stroke="var(--border)" strokeDasharray="2 4" vertical={false} />
+                        <XAxis dataKey="label" tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Georgia, serif' }} tickLine={false} axisLine={false} interval={chartInterval} />
+                        <YAxis yAxisId="hrv" orientation="left" tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Georgia, serif' }} tickLine={false} axisLine={false} domain={['auto', 'auto']} />
+                        {dailyHr.length > 0 && (
+                          <YAxis yAxisId="hr" orientation="right" tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Georgia, serif' }} tickLine={false} axisLine={false} domain={['auto', 'auto']} />
+                        )}
+                        <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: 'var(--border)' }} />
+                        {hrvBaseline !== null && (
+                          <ReferenceLine yAxisId="hrv" y={hrvBaseline} stroke="var(--gold)" strokeDasharray="3 3" strokeOpacity={0.4} />
+                        )}
+                        {dailyHrv.length > 0 && (
+                          <Line yAxisId="hrv" type="monotone" dataKey="hrv" name="HRV (ms)" stroke="var(--pattern)" strokeWidth={1.5} dot={false} connectNulls={false} />
+                        )}
+                        {dailyHr.length > 0 && (
+                          <Line yAxisId="hr" type="monotone" dataKey="hr" name="FC riposo (bpm)" stroke="var(--identita)" strokeWidth={1.5} dot={false} connectNulls={false} />
+                        )}
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  ) : dailySteps.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={160}>
+                      <ComposedChart data={timeline} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
+                        <CartesianGrid stroke="var(--border)" strokeDasharray="2 4" vertical={false} />
+                        <XAxis dataKey="label" tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Georgia, serif' }} tickLine={false} axisLine={false} interval={chartInterval} />
+                        <YAxis yAxisId="s" tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Georgia, serif' }} tickLine={false} axisLine={false} />
+                        <Tooltip contentStyle={tooltipStyle} />
+                        <Bar yAxisId="s" dataKey="steps" name="Passi" fill="var(--gold)" fillOpacity={0.3} radius={[2, 2, 0, 0]} />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', padding: '2rem 0' }}>
+                      Nessun dato nel periodo
+                    </p>
+                  )}
+
+                  <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1rem', flexWrap: 'wrap' }}>
+                    {dailyHrv.length > 0 && <LegendDot color="var(--pattern)" label="HRV (ms)" />}
+                    {dailyHr.length > 0 && <LegendDot color="var(--identita)" label="FC riposo (bpm)" />}
+                    {hrvBaseline !== null && <LegendDashed label={`Baseline ${hrvBaseline}ms`} />}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-// ─── WatchSyncBadge ───────────────────────────────────────────
-
-function WatchSyncBadge({ lastWatchAt }: { lastWatchAt: string | null }) {
-  const [label, setLabel] = useState<string | null>(null);
-  const [isStale, setIsStale] = useState(false);
-
-  useEffect(() => {
-    if (!lastWatchAt) {
-      setLabel('watch mai sincronizzato');
-      setIsStale(true);
-      return;
-    }
-    const ts = new Date(lastWatchAt).getTime();
-    const diffMs = Date.now() - ts;
-    const diffH = diffMs / 3600000;
-
-    let text: string;
-    if (diffH < 1)       text = 'watch sincronizzato < 1h fa';
-    else if (diffH < 6)  text = `watch sincronizzato ${Math.floor(diffH)}h fa`;
-    else if (diffH < 24) text = `watch: ultimo dato ${Math.floor(diffH)}h fa`;
-    else {
-      const d = Math.floor(diffH / 24);
-      text = `watch: ultimo dato ${d} ${d === 1 ? 'giorno' : 'giorni'} fa`;
-    }
-
-    setLabel(text);
-    setIsStale(diffH >= 4); // stale se più di 4h senza dati watch
-  }, [lastWatchAt]);
-
-  if (!label) return null;
-
-  return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: '0.4rem',
-      marginBottom: '0.75rem',
-    }}>
-      <span style={{
-        display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%',
-        background: isStale ? '#B87171' : 'var(--pattern)',
-        flexShrink: 0,
-      }} />
-      <span style={{ fontSize: '0.72rem', color: isStale ? '#B87171' : 'var(--text-muted)' }}>
-        {label}
-      </span>
-    </div>
-  );
-}
-
-// ─── helpers ──────────────────────────────────────────────────
+// ─── helpers ─────────────────────────────────────────────────
 
 function samples_shown(correlations: DailyCorrelation[]): number {
   return correlations.filter(d =>
@@ -764,7 +843,7 @@ function LegendDot({ color, label }: { color: string; label: string }) {
 function LegendDashed({ label }: { label: string }) {
   return (
     <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-      <span style={{ display: 'inline-block', width: '12px', height: '0', border: '1px dashed rgba(201,169,110,0.5)' }} />
+      <span style={{ display: 'inline-block', width: '12px', height: '0', border: '1px dashed color-mix(in srgb, var(--gold) 50%, transparent)' }} />
       {label}
     </span>
   );

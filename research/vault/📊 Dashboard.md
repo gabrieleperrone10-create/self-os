@@ -1,6 +1,6 @@
 # SELF OS — Research Vault
 
-> Ultimo aggiornamento: 2026-06-22
+> Ultimo aggiornamento: 2026-07-05
 
 ---
 
@@ -8,24 +8,27 @@
 
 | Metrica | Valore |
 |---------|--------|
-| Utenti totali | 8 |
-| Check-in totali | 91 |
-| Stato medio mattina | 6.6 |
-| Stato medio sera | 6.6 |
-| Pattern attivi | 25 |
-| Decisioni registrate | 11 |
-| Analisi aggregata attiva | No (soglia: 10 utenti) |
+| Utenti totali | 9 |
+| Check-in totali | 55 |
+| Stato medio mattina | 7.2 |
+| Stato medio sera | 7.2 |
+| Pattern attivi | 17 |
+| Decisioni registrate | 5 |
+| Analisi aggregata attiva | Sì |
 
 ---
 
 ## Findings Aggregati
+- [[findings/aggregate/2026-07-05]]
 - [[findings/aggregate/2026-06-05]]
 
 ## Findings Personali
+- [[findings/personal/2026-07-05]]
 - [[findings/personal/2026-06-22]]
 - [[findings/personal/2026-06-05]]
 
 ## Proposte R&D
+- [[proposals/2026-07-05]]
 - [[proposals/2026-06-22]]
 - [[proposals/2026-06-05]]
 

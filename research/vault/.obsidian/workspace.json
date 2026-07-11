@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "proposals/2026-06-05.md",
+                "file": "🚀 Come Approvare le Proposte.md",
                 "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "2026-06-05"
+              "title": "🚀 Come Approvare le Proposte"
             }
           }
         ]
@@ -185,9 +185,11 @@
   },
   "active": "e8e02398865a354a",
   "lastOpenFiles": [
+    "findings/aggregate/2026-07-05.md",
+    "proposals/2026-07-05.md",
+    "proposals/2026-06-05.md",
     "🚀 Come Approvare le Proposte.md",
     "prompt-evolution/v1.0 - Stato Iniziale.md",
-    "proposals/2026-06-05.md",
     "2026-06-05.md",
     "Senza nome.canvas",
     "memory/state.json",

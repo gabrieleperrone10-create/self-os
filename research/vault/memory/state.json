@@ -1,12 +1,12 @@
 {
-  "last_run": "2026-06-22",
+  "last_run": "2026-07-05",
   "last_metrics": {
-    "total_users": 8,
-    "total_checkins": 91,
-    "avg_state_morning": 6.6,
-    "avg_state_evening": 6.6,
-    "active_patterns": 25,
-    "total_decisions": 11
+    "total_users": 9,
+    "total_checkins": 55,
+    "avg_state_morning": 7.2,
+    "avg_state_evening": 7.2,
+    "active_patterns": 17,
+    "total_decisions": 5
   },
   "approved_proposals": []
 }

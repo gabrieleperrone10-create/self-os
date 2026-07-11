@@ -20,8 +20,8 @@ una nuova intersezione o risolvi un bug causato da una.
 
 Il primo sistema operativo per l'identità umana. Non un journal, non un habit tracker.
 Mappa CHI SEI su 4 livelli (stato, pattern, credenze, identità profonda) attraverso
-comportamenti reali nel tempo. Il prodotto non dice cosa fare: mostra chi stai essendo
-mentre lo fai. Vedi `PRODUCT.md` per posizionamento, utenti e anti-references.
+comportamenti reali nel tempo. Il prodotto non dice cosa fare: mostra la tua identità
+mentre agisci. Vedi `PRODUCT.md` per posizionamento, utenti e anti-references.
 
 ---
 
@@ -190,4 +190,4 @@ npm run research     # research agent (export dati + analisi prompt-evolution)
 
 ---
 
-*SELF OS — costruito per chi ha smesso di cercare strategie migliori e ha iniziato a chiedersi chi sta essendo.*
+*SELF OS — costruito per chi ha smesso di cercare strategie migliori e ha iniziato a chiedersi chi è mentre agisce.*

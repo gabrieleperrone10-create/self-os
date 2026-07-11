@@ -56,7 +56,7 @@ function welcomeEmailHtml(firstName: string, email: string): string {
 
     <p style="color:#A89880;font-size:0.95rem;line-height:1.85;margin-bottom:1.5rem;">
       SELF OS non ti dirà cosa fare.<br>
-      Ti mostrerà chi stai essendo mentre lo fai.<br>
+      Ti mostrerà la tua identità mentre agisci.<br>
       La differenza sembra sottile — non lo è.
     </p>
 

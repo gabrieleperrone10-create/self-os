@@ -57,6 +57,6 @@ Paragrafo 1: com'è stato questo mese — stato, presenza, energia.
 Paragrafo 2: cosa dicono le tue decisioni di chi sei adesso.
 Paragrafo 3: i pattern che emergono e si ripetono.
 Paragrafo 4: la tensione tra il tuo pattern ombra e la tua zona di espansione questo mese.
-Paragrafo 5 (breve): una frase finale che specchia chi sta essendo in questo momento — inclusa l'assenza, se è il dato più presente del mese. Non un consiglio. Solo specchio.
+Paragrafo 5 (breve): una frase finale che specchia chi è mentre agisce in questo momento — inclusa l'assenza, se è il dato più presente del mese. Non un consiglio. Solo specchio.
 NON dare consigli. Solo rifletti. Usa le parole esatte dei dati.`;
 };

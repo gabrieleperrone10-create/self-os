@@ -68,7 +68,7 @@ function buildScanSummary(scan: Scan | null): string {
  * un titolo/intestazione, taglia tutto fino alla prima sezione attesa.
  */
 function stripPreamble(text: string): string {
-  const idx = text.search(/\*{0,2}CHI STAI ESSENDO/);
+  const idx = text.search(/\*{0,2}IDENTITÀ IN AZIONE/);
   return idx > 0 ? text.slice(idx) : text;
 }
 

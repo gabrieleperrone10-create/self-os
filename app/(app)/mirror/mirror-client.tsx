@@ -208,7 +208,7 @@ export default function MirrorClient({
         <p style={mutedLabel}>MIRROR DECISIONALE</p>
         <h1 style={pageTitle}>Specchio delle tue decisioni</h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', maxWidth: '480px', lineHeight: 1.7 }}>
-          Il Mirror non consiglia. Riflette chi stai essendo mentre decidi.
+          Il Mirror non consiglia. Riflette la tua identità mentre decidi.
         </p>
       </div>
 

@@ -7,7 +7,7 @@ import type { Checkin, Decision, Pattern } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
-const SECTION_TITLES = ['CHI STAI ESSENDO', 'PATTERN CONFERMATI', 'COSA SI STA MUOVENDO', 'LA TENSIONE CENTRALE'];
+const SECTION_TITLES = ['IDENTITÀ IN AZIONE', 'PATTERN CONFERMATI', 'COSA SI STA MUOVENDO', 'LA TENSIONE CENTRALE'];
 
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });

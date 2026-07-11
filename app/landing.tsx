@@ -19,7 +19,7 @@ const STRATA = [
 const NEGATIONS = [
   ['Non è un journal.', 'Un journal conserva ciò che dici di te. SELF OS osserva ciò che fai.'],
   ['Non è un habit tracker.', 'Le abitudini sono il sintomo. Il sistema mappa la struttura che le genera.'],
-  ['Non ti dirà cosa fare.', 'Nessun consiglio, nessuna motivazione. Ti mostra chi stai essendo mentre lo fai.'],
+  ['Non ti dirà cosa fare.', 'Nessun consiglio, nessuna motivazione. Ti mostra la tua identità mentre agisci.'],
 ];
 
 function useReveal() {
@@ -119,8 +119,8 @@ export function LandingPage() {
           maxWidth: '880px', marginBottom: '2.5rem',
         }}>
           Sai cosa vuoi diventare.<br />
-          <span style={{ color: 'var(--text-secondary)' }}>Non sai chi stai essendo</span>
-          <span className="lp-pulse" style={{ color: 'var(--gold)' }}> adesso.</span>
+          <span style={{ color: 'var(--text-secondary)' }}>Non sai chi sei</span>
+          <span className="lp-pulse" style={{ color: 'var(--gold)' }}> mentre agisci.</span>
         </h1>
 
         <p className="lp-rise lp-d2" style={{
@@ -315,7 +315,7 @@ export function LandingPage() {
             maxWidth: '720px', margin: '0 auto 3rem',
           }}>
             Hai smesso di cercare strategie migliori.<br />
-            <span style={{ color: 'var(--text-secondary)' }}>Inizia a chiederti chi stai essendo.</span>
+            <span style={{ color: 'var(--text-secondary)' }}>Inizia a chiederti chi sei mentre agisci.</span>
           </h2>
           <Link href="/signup" className="lp-cta" style={{
             display: 'inline-block', fontFamily: 'Georgia, serif', fontSize: '1rem',

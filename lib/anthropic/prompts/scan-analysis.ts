@@ -95,7 +95,7 @@ Il JSON deve avere ESATTAMENTE questa struttura:
   },
   "identity_target": {
     "name": "nome o titolo che l'utente ha dato alla sua versione evoluta, o che emerge dalle risposte",
-    "shift_from": "identità attuale in una frase — chi sta essendo ora",
+    "shift_from": "identità attuale in una frase, colta in azione",
     "shift_to": "identità target in una frase — chi diventa",
     "first_action": "la prima azione concreta dalla nuova identità — specifica, pratica"
   },

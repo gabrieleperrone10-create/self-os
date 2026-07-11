@@ -9,8 +9,8 @@ export const IDENTITY_PROFILE_PROMPT = (
 ): string => `
 Sei il sistema di sintesi identitaria di SELF OS.
 Il tuo compito: aggiornare il profilo identitario longitudinale di questa persona —
-la fotografia cumulativa di chi sta essendo, costruita su evidenza comportamentale,
-non su dichiarazioni.
+la fotografia cumulativa della sua identità mentre agisce, costruita su evidenza
+comportamentale, non su dichiarazioni.
 
 Questo profilo verrà iniettato come contesto in tutte le analisi future (mirror,
 insight giornalieri, lettere): deve essere denso, specifico, e usare le parole
@@ -30,7 +30,7 @@ ${patterns.slice(0, 10).map(p => `- [${p.type}] ${p.title}: ${p.description ?? '
 Scrivi il profilo aggiornato in seconda persona, 250-350 parole, con ESATTAMENTE
 queste 4 sezioni (titoli inclusi, in maiuscolo):
 
-CHI STAI ESSENDO
+IDENTITÀ IN AZIONE
 2-3 frasi: l'identità operativa attuale, dedotta dai comportamenti — non da ciò che la persona dice di voler essere.
 
 PATTERN CONFERMATI
@@ -40,9 +40,9 @@ COSA SI STA MUOVENDO
 Cosa è cambiato rispetto al profilo precedente (o allo scan, se è la prima versione). Se nulla si muove, dillo: anche la stasi è un dato.
 
 LA TENSIONE CENTRALE
-Una sola tensione: tra chi stai essendo e chi dici di voler diventare. Una frase chirurgica, non un giudizio.
+Una sola tensione: tra chi sei mentre agisci e chi dici di voler diventare. Una frase chirurgica, non un giudizio.
 
-Rispondi SOLO con il profilo: la prima riga DEVE essere "CHI STAI ESSENDO".
+Rispondi SOLO con il profilo: la prima riga DEVE essere "IDENTITÀ IN AZIONE".
 Nessun titolo generale, nessuna intestazione markdown (#), nessun separatore (---),
 nessuna premessa, nessun commento.
 `;

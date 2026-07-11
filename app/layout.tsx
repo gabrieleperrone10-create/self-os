@@ -5,7 +5,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "SELF OS — Sistema Operativo Identitario",
-  description: "Mappa chi stai essendo nel tempo. Identifica pattern, credenze e la tua identità profonda.",
+  description: "Mappa la tua identità in azione nel tempo. Identifica pattern, credenze e la parte più profonda di te.",
 };
 
 export const viewport: Viewport = {

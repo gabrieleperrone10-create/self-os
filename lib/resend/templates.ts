@@ -27,7 +27,7 @@ export function morningReminderHtml(firstName: string): string {
   return shell(`
     <h1 style="font-size:1.4rem;font-weight:normal;color:#F5F0E8;margin-bottom:1.5rem;">${firstName}, da quale versione di te vuoi operare oggi?</h1>
     <p style="color:#A89880;font-size:0.95rem;line-height:1.85;margin-bottom:2rem;">
-      Due minuti, tre domande. Non per produttività — per vedere chi stai essendo prima che la giornata decida al posto tuo.
+      Due minuti, tre domande. Non per produttività — per vedere la tua identità in azione prima che la giornata decida al posto tuo.
     </p>
     ${button(`${APP_URL}/checkin`, 'Check-in del mattino →')}`);
 }

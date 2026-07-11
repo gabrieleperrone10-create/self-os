@@ -40,6 +40,16 @@ async function main() {
   const personal = profiles?.find(p => p.email === PERSONAL_EMAIL)
   if (!personal) console.warn('⚠️  Personal user not found — personal export skipped')
 
+  // Optional window for the aggregate export only (personal stays full-history)
+  const aggregateDays = process.env.AGGREGATE_DAYS ? Number(process.env.AGGREGATE_DAYS) : null
+  const cutoff = aggregateDays ? new Date(Date.now() - aggregateDays * 86400000).toISOString() : null
+  if (cutoff) console.log(`   Finestra aggregata: ultimi ${aggregateDays}gg (da ${cutoff.split('T')[0]})`)
+
+  const aggScans = cutoff ? scans?.filter(s => s.completed_at >= cutoff) : scans
+  const aggCheckins = cutoff ? checkins?.filter(c => c.date >= cutoff) : checkins
+  const aggPatterns = cutoff ? patterns?.filter(p => p.last_seen >= cutoff) : patterns
+  const aggDecisions = cutoff ? decisions?.filter(d => d.created_at >= cutoff) : decisions
+
   // Build anon map: personal = user_000, others = user_001, user_002...
   let counter = 1
   const anonMap: Record<string, string> = {}
@@ -54,10 +64,11 @@ async function main() {
     exported_at: today,
     meta: {
       total_users: profiles?.length ?? 0,
-      total_scans: scans?.length ?? 0,
-      total_checkins: checkins?.length ?? 0,
-      total_patterns: patterns?.length ?? 0,
-      total_decisions: decisions?.length ?? 0,
+      total_scans: aggScans?.length ?? 0,
+      total_checkins: aggCheckins?.length ?? 0,
+      total_patterns: aggPatterns?.length ?? 0,
+      total_decisions: aggDecisions?.length ?? 0,
+      window_days: aggregateDays,
       note: 'user_000 = personal (Gabriele), all others fully anonymous',
     },
     users: profiles?.map(p => ({
@@ -67,13 +78,13 @@ async function main() {
       onboarding_completed: p.onboarding_completed,
       created_at: p.created_at,
     })),
-    scans: scans?.map(s => ({
+    scans: aggScans?.map(s => ({
       anon_user: anonMap[s.user_id] ?? 'unknown',
       answers: s.answers,
       analysis: s.analysis,
       completed_at: s.completed_at,
     })),
-    checkins: checkins?.map(c => ({
+    checkins: aggCheckins?.map(c => ({
       anon_user: anonMap[c.user_id] ?? 'unknown',
       type: c.type,
       state_score: c.state_score,
@@ -81,7 +92,7 @@ async function main() {
       ai_insight: c.ai_insight,
       date: c.date,
     })),
-    patterns: patterns?.map(p => ({
+    patterns: aggPatterns?.map(p => ({
       anon_user: anonMap[p.user_id] ?? 'unknown',
       type: p.type,
       title: p.title,
@@ -91,7 +102,7 @@ async function main() {
       last_seen: p.last_seen,
       is_active: p.is_active,
     })),
-    decisions: decisions?.map(d => ({
+    decisions: aggDecisions?.map(d => ({
       anon_user: anonMap[d.user_id] ?? 'unknown',
       state_score: d.state_score,
       origin: d.origin,

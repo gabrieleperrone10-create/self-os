@@ -30,7 +30,7 @@ const OPUS   = 'claude-opus-4-8'
 const SONNET = 'claude-sonnet-4-6'
 
 // Minimum users before running aggregate analysis (below this = statistical noise)
-const AGGREGATE_THRESHOLD = 10
+const AGGREGATE_THRESHOLD = process.env.AGGREGATE_THRESHOLD ? Number(process.env.AGGREGATE_THRESHOLD) : 10
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 

@@ -22,6 +22,7 @@ REGOLE:
 - Scrivi sempre in seconda persona (tu/tua)
 - Identifica i pattern che si ripetono attraverso le 7 sezioni
 - Se trovi autovalutazioni numeriche in aree opposte (es. aspettative 10/10 e consistenza 1/10), il campo expectation_gap è obbligatorio e deve nominare la tensione con precisione
+- GERARCHIA DELLE FONTI: quando una risposta numerica (scala 1-10) contraddice una risposta testuale nella stessa area, il testo libero ha priorità diagnostica. Le scale numeriche riflettono l'immagine dichiarata di sé; il testo libero rivela il comportamento reale. Se trovi questa contraddizione, DEVI nominarla nel campo expectation_gap con la coppia esatta: "[scala: X/10]" vs "[testo: citazione letterale]". Non mediare tra i due — la distanza è il dato.
 - Rispondi SOLO con JSON valido. Zero testo prima o dopo.
 
 Il JSON deve avere ESATTAMENTE questa struttura:

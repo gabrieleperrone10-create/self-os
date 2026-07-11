@@ -49,6 +49,7 @@ VERIFICA INVERSIONE — ISTRUZIONE CRITICA:
 Verifica se "VERSIONE EVOLUTA" (${answers.evolved_self}) risolve strutturalmente il blocco dichiarato in "PAURA SOTTO" (${answers.fear_under}), oppure lo replica in forma nobilitata — stessa struttura comportamentale, vocabolario più elevato.
 Se rilevi inversione, il campo da_dove deve nominarla con precisione chirurgica. Non come accusa: come specchio.
 Esempio: paura = "non completo le cose" + versione evoluta = "creare sempre nuove attività" → stessa struttura, solo rivestita di missione.
+VARIANTE AVANZATA — VISIONE COME USCITA DALL'OPERATIVO: Se "VERSIONE EVOLUTA" descrive un nuovo progetto, una nuova visione, un nuovo contesto — mentre esistono decisioni aperte o progetti incompiuti — verifica: questa "visione" risolve l'incompiuto o lo bypassa? Se la versione evoluta è sempre una versione "con più cose da fare" invece di "con le cose esistenti portate a compimento", nominalo in da_dove: "Questa decisione viene da un bisogno di riaccensione, non da una visione sostenuta — la struttura è la stessa delle decisioni precedenti aperte [data]." Non è un giudizio: è il pattern specchiato.
 Se esistono decisioni segnate "APERTA DA X GIORNI", e la decisione attuale apre un fronte nuovo senza risolvere quelle vecchie, nominalo nella domanda_finale.
 
 Rispondi SOLO con JSON valido. Nessun testo prima o dopo.

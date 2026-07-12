@@ -74,6 +74,22 @@ const MORNING_QUESTIONS: Question[] = [
   },
 ];
 
+// Risposta che segna una rottura di pattern — deve combaciare con l'option
+// omonima qui sotto e con la costante usata in lib/utils/checkin.ts
+const PATTERN_BREAK_ANSWER = 'Sì, l\'ho riconosciuto e ho scelto diversamente';
+
+// Domanda di condition-mining: appare solo dopo una rottura di pattern.
+// Non è gratitude journaling — estrae le condizioni che rendono replicabile
+// la scelta diversa (il pattern funzionale è tale solo se ha condizioni).
+const CONDIZIONI_QUESTION: Question = {
+  id: 'condizioni',
+  type: 'text',
+  label: 'Condizioni',
+  text: 'Cosa ha reso possibile la scelta diversa — cosa c\'era oggi che di solito manca?',
+  placeholder: 'Non il merito: le condizioni. Es. avevo dormito, l\'avevo deciso la sera prima, non ero solo...',
+  maxChars: 300,
+};
+
 const EVENING_QUESTIONS: Question[] = [
   {
     id: 'stato',
@@ -146,7 +162,18 @@ export default function CheckinPage() {
   const [activeExperiments, setActiveExperiments] = useState<Array<{ id: string; pattern_title: string; triggers: string[]; different_action: string; trackedToday: boolean }>>([]);
   const [labStep, setLabStep] = useState(0);
 
-  const questions = checkinType === 'morning' ? MORNING_QUESTIONS : EVENING_QUESTIONS;
+  // La sequenza serale si estende con la domanda `condizioni` subito dopo
+  // una rottura di pattern dichiarata — la lista è derivata dalle risposte.
+  const questions = (() => {
+    if (checkinType === 'morning') return MORNING_QUESTIONS;
+    if (answers.pattern_recognition !== PATTERN_BREAK_ANSWER) return EVENING_QUESTIONS;
+    const idx = EVENING_QUESTIONS.findIndex(q => q.id === 'pattern_recognition');
+    return [
+      ...EVENING_QUESTIONS.slice(0, idx + 1),
+      CONDIZIONI_QUESTION,
+      ...EVENING_QUESTIONS.slice(idx + 1),
+    ];
+  })();
   const typeLabel = checkinType === 'morning' ? 'Mattina' : 'Sera';
   const typeColor = checkinType === 'morning' ? 'var(--stato)' : 'var(--identita)';
   const totalQ = questions.length;
@@ -199,9 +226,15 @@ export default function CheckinPage() {
 
   function handleChoiceSelect(option: string) {
     const id = currentQuestion.id;
-    setAnswers(prev => ({ ...prev, [id]: option }));
+    const next = { ...answers, [id]: option };
+    // Se l'utente torna indietro e cambia la risposta sul pattern, la
+    // domanda `condizioni` sparisce: via anche la sua risposta orfana.
+    if (id === 'pattern_recognition' && option !== PATTERN_BREAK_ANSWER) {
+      delete next.condizioni;
+    }
+    setAnswers(next);
     // Auto-advance after a short delay
-    setTimeout(() => advance({ ...answers, [id]: option }), 260);
+    setTimeout(() => advance(next), 260);
   }
 
   function handleTextConfirm() {

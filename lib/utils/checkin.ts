@@ -44,3 +44,21 @@ export function averageStateScore(checkins: Checkin[]): number | null {
   const sum = checkins.reduce((acc, c) => acc + (c.state_score ?? 0), 0);
   return Math.round((sum / checkins.length) * 10) / 10;
 }
+
+// Deve combaciare con l'option del check-in serale (app/(app)/checkin/page.tsx)
+// e con il marker in lib/anthropic/prompts/daily-insight.ts
+const PATTERN_BREAK_MARKER = 'ho scelto diversamente';
+
+/**
+ * Rottura di pattern: check-in serale in cui l'utente ha riconosciuto un
+ * pattern E ha scelto diversamente. È l'evidenza comportamentale del
+ * cambiamento identitario — la metrica che il prodotto promette.
+ */
+export function isPatternBreak(checkin: Checkin): boolean {
+  return checkin.type === 'evening' &&
+    String(checkin.answers?.pattern_recognition ?? '').includes(PATTERN_BREAK_MARKER);
+}
+
+export function countPatternBreaks(checkins: Checkin[]): number {
+  return checkins.filter(isPatternBreak).length;
+}

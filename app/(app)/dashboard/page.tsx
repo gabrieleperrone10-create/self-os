@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getViewContext } from '@/lib/supabase/view-context';
 import Link from 'next/link';
-import { calculateStreak, averageStateScore } from '@/lib/utils/checkin';
+import { calculateStreak, averageStateScore, countPatternBreaks } from '@/lib/utils/checkin';
 import { calculateMomentum } from '@/lib/utils/momentum';
 import type { Checkin, Scan, Decision } from '@/types';
 import { VoiceCheckinCard } from '@/components/shared/voice-checkin-card';
@@ -75,6 +75,10 @@ export default async function DashboardPage() {
 
   // Momentum score
   const momentum = calculateMomentum(checkins, decisions, streak);
+
+  // Rotture di pattern (riconosciuto → scelto diversamente) ultimi 30 giorni
+  const last30 = checkins.filter(c => (Date.now() - new Date(c.date).getTime()) / 86400000 <= 30);
+  const patternBreaks = countPatternBreaks(last30);
 
   // Re-entry alert: scan done but no checkin in 7+ days
   const daysSinceLastCheckin = checkins.length > 0
@@ -213,6 +217,12 @@ export default async function DashboardPage() {
           color="var(--gold)"
           value={streak > 0 ? `${streak}` : '—'}
           sub={streak === 1 ? 'giorno consecutivo' : streak > 1 ? 'giorni consecutivi' : 'Inizia oggi'}
+        />
+        <StateCard
+          label="Scelte diverse"
+          color="var(--pattern)"
+          value={patternBreaks > 0 ? `${patternBreaks}` : '—'}
+          sub={patternBreaks > 0 ? 'rotture di pattern · 30 giorni' : 'Nessuna registrata · 30 giorni'}
         />
         <StateCard
           label="Scan"

@@ -119,6 +119,51 @@ export const dailyInsightCases: DailyInsightCase[] = [
     ],
   },
   {
+    name: 'rottura-di-pattern-con-condizioni',
+    checkin: makeCheckin({
+      type: 'evening',
+      state_score: 7,
+      answers: {
+        momento: 'Alle 9 di mattina, quando ho aperto la mail difficile invece di "preparare il contesto" per un\'ora',
+        pattern_recognition: 'Sì, l\'ho riconosciuto e ho scelto diversamente',
+        condizioni: 'L\'avevo deciso la sera prima e l\'avevo scritto sul post-it. E avevo dormito 8 ore, cosa rara',
+        decision_origin: 'Visione chiara di dove vado',
+        chiusura: 'Ho lasciato aperto il report, ma l\'ho scelto: domani mattina ha la priorità',
+      },
+    }),
+    recentCheckins: [
+      makeCheckin({ type: 'evening', state_score: 5, answers: { pattern_recognition: 'Sì, l\'ho riconosciuto ma ci sono caduto lo stesso' }, date: '2026-06-08' }),
+      makeCheckin({ type: 'evening', state_score: 4, answers: { pattern_recognition: 'L\'ho riconosciuto solo dopo — a posteriori' }, date: '2026-06-09' }),
+    ],
+    criteria: [
+      'Deve trattare la rottura di pattern come il dato centrale — non come episodio minore né come pretesto per cercare una tensione nascosta',
+      "Deve ancorare le condizioni nominate (deciso la sera prima / scritto / 8 ore di sonno) — non parlare genericamente di 'forza di volontà' o 'progresso'",
+      'VIETATO tono congratulatorio o motivazionale (niente "ottimo", "bravo", "grande passo")',
+      'La domanda finale deve puntare alla replicabilità delle condizioni, non a come si sente',
+      'NON deve trattare questo input positivo e concreto come schermatura né inventare crepe',
+    ],
+  },
+  {
+    name: 'giornata-funzionale-vs-schermatura',
+    checkin: makeCheckin({
+      type: 'evening',
+      state_score: 8,
+      answers: {
+        momento: 'La chiamata con il cliente alle 15: ho detto no alla richiesta fuori scope, con calma, senza giustificarmi per dieci minuti come al solito',
+        pattern_recognition: 'No, non ho riconosciuto nessun pattern oggi',
+        decision_origin: 'Visione chiara di dove vado',
+        chiusura: 'Il preventivo nuovo. Scelto: prima volevo rileggere i numeri con la testa fresca',
+      },
+    }),
+    recentCheckins: [],
+    criteria: [
+      'Input positivo ma CONCRETO (fatti specifici: la chiamata alle 15, il no senza giustificarsi) → NON deve trattarlo come schermatura né cercare la crepa a ogni costo',
+      "Deve rispecchiare cosa ha funzionato usando le parole esatte dell'utente (es. 'senza giustificarmi')",
+      'Niente consigli, niente celebrazione — rispecchio chirurgico dello stesso registro usato per i blocchi',
+      'La domanda finale deve aprire (non sì/no)',
+    ],
+  },
+  {
     name: 'input-monosillabico',
     checkin: makeCheckin({
       type: 'evening',

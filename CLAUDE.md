@@ -33,8 +33,11 @@ Framework:     Next.js 16 (App Router, TypeScript strict)
 Styling:       Tailwind CSS v4 (CSS vars in :root, @theme inline) + shadcn/ui
 Database:      Supabase (PostgreSQL + RLS sempre attivo)
 Auth:          Supabase Auth (@supabase/ssr)
-AI:            Anthropic Claude — AI_MODEL in lib/anthropic/client.ts
-               (claude-sonnet-4-6; Opus per generate-experiment, Haiku per analyze-signal)
+AI:            Anthropic Claude — routing in lib/anthropic/client.ts
+               (AI_MODEL claude-sonnet-5, SEMPRE con thinking: NO_THINKING;
+               createDeepMessage() = Fable 5 + fallback Opus 4.8 per
+               identity-profile e monthly-letter; Opus 4.8 per
+               generate-experiment, Haiku per analyze-signal)
 Pagamenti:     Stripe (piani free/pro/coach)
 Email:         Resend
 Deploy:        Vercel
@@ -77,9 +80,17 @@ vanno committate INSIEME (§2.8).
 Ogni route AI segue questo schema (vedi una esistente prima di crearne una nuova):
 
 1. `export const maxDuration = 60;` come **prima riga** del file
+   (eccezione: le route che toccano il modello deep — daily-insight,
+   monthly-letter, cron/morning — stanno a 300)
 2. Auth: `supabase.auth.getUser()` → 401
 3. Quota: `checkAiQuota` → 429 con `quotaExceededBody` (`lib/ai/usage.ts`)
 4. Prompt SEMPRE da `lib/anthropic/prompts/<nome>.ts` — mai inline
+4-bis. Modello: `AI_MODEL` va SEMPRE accompagnato da `thinking: NO_THINKING`
+   (Sonnet 5 attiva l'adaptive thinking se omesso → consuma i max_tokens e
+   sposta il testo fuori da `content[0]`). Per sintesi longitudinali usa
+   `createDeepMessage()` (Fable 5 + fallback Opus 4.8): MAI passare
+   `thinking`, estrarre il testo con `firstText(message)`, registrare
+   l'usage col `model` ritornato
 5. Knowledge base via `cachedKbSystem(kbContext, istruzione, contestoPerUtente?)`
    (`lib/anthropic/client.ts`): blocco system con prompt caching. Il contesto
    per-utente (gap, profilo identitario) va nel terzo argomento, MAI concatenato

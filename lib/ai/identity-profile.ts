@@ -1,4 +1,4 @@
-import { anthropic, AI_MODEL } from '@/lib/anthropic/client';
+import { createDeepMessage, firstText } from '@/lib/anthropic/client';
 import { IDENTITY_PROFILE_PROMPT } from '@/lib/anthropic/prompts/identity-profile';
 import { recordAiUsage } from '@/lib/ai/usage';
 import type { createClient } from '@/lib/supabase/server';
@@ -109,23 +109,24 @@ export async function generateIdentityProfile(
     patterns,
   );
 
-  const message = await anthropic.messages.create({
-    model: AI_MODEL,
-    max_tokens: 800,
+  // Sintesi longitudinale → modello deep (Fable 5, fallback Opus 4.8).
+  // Il thinking sempre attivo consuma output tokens: max_tokens alzato,
+  // la lunghezza del profilo resta governata dal prompt.
+  const { message, model } = await createDeepMessage({
+    max_tokens: 4096,
     messages: [{ role: 'user', content: prompt }],
   });
 
-  void recordAiUsage(supabase, userId, 'identity-profile', AI_MODEL, message.usage);
+  void recordAiUsage(supabase, userId, 'identity-profile', model, message.usage);
 
-  const text = message.content[0];
-  if (text.type !== 'text') throw new Error('Risposta AI non valida');
+  const profileText = firstText(message);
 
   const { data: saved, error } = await supabase
     .from('identity_profiles')
     .insert({
       user_id: userId,
       version: (previous?.version ?? 0) + 1,
-      profile_text: stripPreamble(text.text.trim()),
+      profile_text: stripPreamble(profileText.trim()),
       source_counts: {
         checkins: checkins.length,
         decisions: decisions.length,

@@ -3,7 +3,7 @@ export const maxDuration = 60;
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { checkAiQuota, recordAiUsage, quotaExceededBody } from '@/lib/ai/usage';
-import { anthropic, AI_MODEL, cachedKbSystem } from '@/lib/anthropic/client';
+import { anthropic, AI_MODEL, NO_THINKING, cachedKbSystem } from '@/lib/anthropic/client';
 import { PATTERN_RECOGNITION_PROMPT } from '@/lib/anthropic/prompts/pattern-recognition';
 import { fetchArchetypesContext } from '@/lib/knowledge-base/fetch';
 import { parseAIJson } from '@/lib/anthropic/parsers';
@@ -43,6 +43,7 @@ export async function POST() {
     // Call Claude
     const message = await anthropic.messages.create({
       model: AI_MODEL,
+      thinking: NO_THINKING,
       max_tokens: 1024,
       system: cachedKbSystem(kbContext, 'Usa gli archetipi e i framework come sistema di classificazione preciso. I pattern che identifichi devono essere radicati nella struttura psicologica di SELF OS, non generici.'),
       messages: [

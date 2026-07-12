@@ -3,7 +3,7 @@ export const maxDuration = 60;
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { checkAiQuota, recordAiUsage, quotaExceededBody } from '@/lib/ai/usage';
-import { anthropic, AI_MODEL } from '@/lib/anthropic/client';
+import { anthropic, AI_MODEL, NO_THINKING } from '@/lib/anthropic/client';
 import { VOICE_ANALYSIS_PROMPT } from '@/lib/anthropic/prompts/voice-analysis';
 import { parseAIJson } from '@/lib/anthropic/parsers';
 import { voiceAnalysisSchema } from '@/lib/anthropic/schemas';
@@ -32,6 +32,7 @@ export async function POST(request: Request) {
     // Call Claude
     const message = await anthropic.messages.create({
       model: AI_MODEL,
+      thinking: NO_THINKING,
       max_tokens: 512,
       messages: [{ role: 'user', content: VOICE_ANALYSIS_PROMPT(transcript) }],
     });

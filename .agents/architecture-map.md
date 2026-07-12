@@ -86,6 +86,22 @@ parziali al buio.
 Ogni chiamata AI passa da qui — se cambi firma/modello/error handling qui,
 impatti TUTTE le feature AI del prodotto in un colpo solo.
 
+**Routing modelli (sessione 2026-07-12):**
+- `AI_MODEL = 'claude-sonnet-5'` — TUTTE le chiamate con AI_MODEL passano
+  `thinking: NO_THINKING` (Sonnet 5 attiva l'adaptive thinking se `thinking`
+  è omesso → consumerebbe max_tokens e sposterebbe il testo fuori da
+  `content[0]`). Se aggiungi una nuova route su AI_MODEL, includi
+  `thinking: NO_THINKING`.
+- `createDeepMessage()` — Fable 5 (`DEEP_MODEL`) con fallback automatico su
+  Opus 4.8 per refusal/errore. Usata da `lib/ai/identity-profile.ts` e
+  `generateMonthlyLetter` in `lib/ai/reports.ts`. Con Fable 5 il thinking è
+  sempre attivo: MAI passare `thinking`, e il testo va estratto con
+  `firstText(message)` (il content può aprirsi con blocchi thinking).
+  Le route che la ospitano hanno `maxDuration = 300` (daily-insight per
+  l'after(), monthly-letter, cron/morning) — non riportarle a 60.
+- Tokenizer Sonnet 5 ~+30% token a parità di testo: `analyze-scan` è a
+  `max_tokens: 6000` per questo. Occhio ai max_tokens stretti altrove.
+
 ### 2.4 `lib/knowledge-base/fetch.ts`
 **È:** recupero del contesto psicologico (`knowledge_base` table) iniettato
 nei prompt AI.
@@ -144,6 +160,29 @@ chi.
 - **`evals/`**: importa i VERI builder e schemi di produzione — se cambi la firma
   di un prompt valutato (mirror, daily-insight, scan-analysis), `evals/run.ts`
   smette di compilare: aggiornalo nello stesso commit.
+
+### 2.7-ter Rotture di pattern (sessione 2026-07-12)
+**È:** la catena "pattern funzionali" — la stringa option del check-in serale
+è il contratto che tiene insieme quattro punti:
+
+1. `app/(app)/checkin/page.tsx` — option `'Sì, l'ho riconosciuto e ho scelto
+   diversamente'` (`PATTERN_BREAK_ANSWER`) + domanda condizionale `condizioni`
+   (condition-mining, appare solo dopo la rottura).
+2. `lib/utils/checkin.ts` — `isPatternBreak()`/`countPatternBreaks()`
+   (matching su `PATTERN_BREAK_MARKER = 'ho scelto diversamente'`).
+3. `lib/anthropic/prompts/daily-insight.ts` — regola ROTTURA DI PATTERN +
+   label `condizioni` (stesso marker).
+4. `lib/anthropic/prompts/weekly-report.ts` — conteggio rotture + condizioni
+   abilitanti nel prompt (importa `isPatternBreak` da lib/utils/checkin).
+
+**Consumatori UI:** dashboard (card "Scelte diverse", 30gg).
+**KB:** migrazione `016_kb_functional_patterns.sql` (2 meccanismi categoria
+`mechanism`: consolidamento identitario, condizioni abilitanti) — fluisce in
+daily/mirror/weekly/monthly via `fetch.ts` senza altri cambi.
+
+**Rischio:** se riformuli l'option nel check-in, il marker smette di
+matchare in TUTTI gli altri punti — cambia le quattro occorrenze insieme
+(o meglio: non riformulare l'option).
 
 ### 2.8 Coppie prompt + route (`lib/anthropic/prompts/*.ts` ↔ `app/api/ai/*/route.ts`)
 **È:** ogni prompt esporta una funzione con una firma precisa (numero/ordine
@@ -389,6 +428,10 @@ seguita da riga vuota). Previene il "socket connection closed unexpectedly"
 causato dal timeout di default delle Vercel Functions sulle chiamate Claude
 più lunghe (es. Opus su `generate-experiment`). **Quando crei una nuova route
 AI, copia questa riga per prima cosa.**
+
+**Eccezione (2026-07-12):** le route che toccano il modello deep (Fable 5)
+stanno a `maxDuration = 300`: `daily-insight` (identity-profile via after()),
+`monthly-letter`, `cron/morning`. Vedi §2.3.
 
 ### 5.5 Classi CSS mobile condivise (`app/globals.css`)
 Pass di responsive design del 2026-06-09: dato che la maggior parte dei

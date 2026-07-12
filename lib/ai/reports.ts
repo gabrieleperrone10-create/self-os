@@ -2,7 +2,7 @@
 // route on-demand (client di sessione, RLS) e i cron (client admin).
 // Estratta dalle route: route e funzioni vanno SEMPRE committate insieme.
 
-import { anthropic, AI_MODEL, cachedKbSystem } from '@/lib/anthropic/client';
+import { anthropic, AI_MODEL, NO_THINKING, cachedKbSystem, createDeepMessage, firstText } from '@/lib/anthropic/client';
 import { WEEKLY_REPORT_PROMPT } from '@/lib/anthropic/prompts/weekly-report';
 import { MONTHLY_LETTER_PROMPT } from '@/lib/anthropic/prompts/monthly-letter';
 import { fetchFullContext } from '@/lib/knowledge-base/fetch';
@@ -67,6 +67,7 @@ export async function generateWeeklyReport(
 
   const message = await anthropic.messages.create({
     model: AI_MODEL,
+    thinking: NO_THINKING,
     max_tokens: 512,
     system: cachedKbSystem(kbContext, 'Usa il processo di trasformazione in 5 fasi e gli archetipi come sistema di lettura dei dati. Fai emergere la struttura psicologica profonda, non solo le statistiche.', userContext),
     messages: [{ role: 'user', content: prompt }],
@@ -136,18 +137,18 @@ export async function generateMonthlyLetter(
   const userContext = [gapContext, profileContext].filter(Boolean).join('\n\n');
   const prompt = MONTHLY_LETTER_PROMPT(checkins, decisions, patterns, scan, month, year);
 
-  const message = await anthropic.messages.create({
-    model: AI_MODEL,
-    max_tokens: 1024,
+  // Sintesi mensile → modello deep (Fable 5, fallback Opus 4.8). Il thinking
+  // sempre attivo consuma output tokens: max_tokens alzato di conseguenza,
+  // la lunghezza della lettera resta governata dal prompt.
+  const { message, model } = await createDeepMessage({
+    max_tokens: 4096,
     system: cachedKbSystem(kbContext, "Usa l'intera base psicologica — archetipi, loop, IFS, processo di trasformazione — per scrivere una lettera che vada in profondità. Non limitarti a riassumere i dati: rifletti l'identità.", userContext),
     messages: [{ role: 'user', content: prompt }],
   });
 
-  void recordAiUsage(supabase, userId, 'monthly-letter', AI_MODEL, message.usage);
+  void recordAiUsage(supabase, userId, 'monthly-letter', model, message.usage);
 
-  const text = message.content[0];
-  if (text.type !== 'text') throw new Error('Risposta non valida');
-  const aiLetter = text.text.trim();
+  const aiLetter = firstText(message).trim();
 
   const { data: letter } = await supabase
     .from('monthly_letters')

@@ -3,7 +3,7 @@ export const maxDuration = 60;
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { checkAiQuota, recordAiUsage, quotaExceededBody } from '@/lib/ai/usage';
-import { anthropic, AI_MODEL, cachedKbSystem } from '@/lib/anthropic/client';
+import { anthropic, AI_MODEL, NO_THINKING, cachedKbSystem } from '@/lib/anthropic/client';
 import { SCAN_ANALYSIS_PROMPT } from '@/lib/anthropic/prompts/scan-analysis';
 import { fetchFullContext } from '@/lib/knowledge-base/fetch';
 import { parseAIJson } from '@/lib/anthropic/parsers';
@@ -33,7 +33,8 @@ export async function POST(request: Request) {
 
     const message = await anthropic.messages.create({
       model: AI_MODEL,
-      max_tokens: 4096,
+      thinking: NO_THINKING,
+      max_tokens: 6000, // tokenizer Sonnet 5 ~+30%: 4096 rischiava il troncamento del report
       system: cachedKbSystem(kbContext, 'Usa questa base psicologica per identificare gli archetipi, i loop e i framework con precisione. Fai riferimento agli archetipi specifici (S1-S12) quando sono chiaramente rilevanti.'),
       messages: [
         {

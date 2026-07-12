@@ -3,7 +3,7 @@ export const maxDuration = 60;
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { checkAiQuota, recordAiUsage, quotaExceededBody } from '@/lib/ai/usage';
-import { anthropic, AI_MODEL } from '@/lib/anthropic/client';
+import { anthropic, AI_MODEL, NO_THINKING } from '@/lib/anthropic/client';
 import { MOMENTUM_INSIGHT_PROMPT } from '@/lib/anthropic/prompts/momentum-insight';
 import type { MomentumData } from '@/lib/utils/momentum';
 
@@ -20,6 +20,7 @@ export async function POST(request: Request) {
 
     const message = await anthropic.messages.create({
       model: AI_MODEL,
+      thinking: NO_THINKING,
       max_tokens: 100,
       messages: [{ role: 'user', content: MOMENTUM_INSIGHT_PROMPT(momentumData) }],
     });

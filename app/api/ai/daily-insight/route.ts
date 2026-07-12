@@ -1,11 +1,11 @@
-export const maxDuration = 60;
+export const maxDuration = 300; // identity-profile via after() gira su Fable 5: serve margine oltre i 60s
 
 import { NextResponse, after } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { checkAiQuota, recordAiUsage, quotaExceededBody } from '@/lib/ai/usage';
 import { identityProfileContext, maybeRefreshIdentityProfile } from '@/lib/ai/identity-profile';
 import { maybeRefreshBiometricsInsight } from '@/lib/ai/biometrics-insight';
-import { anthropic, AI_MODEL, cachedKbSystem } from '@/lib/anthropic/client';
+import { anthropic, AI_MODEL, NO_THINKING, cachedKbSystem } from '@/lib/anthropic/client';
 import { DAILY_INSIGHT_PROMPT } from '@/lib/anthropic/prompts/daily-insight';
 import { fetchDailyContext } from '@/lib/knowledge-base/fetch';
 import type { Checkin } from '@/types';
@@ -59,6 +59,7 @@ export async function POST(request: Request) {
     // Call Claude
     const message = await anthropic.messages.create({
       model: AI_MODEL,
+      thinking: NO_THINKING,
       max_tokens: 512,
       system: cachedKbSystem(kbContext, 'Usa questa base psicologica come lente invisibile — non citare mai i framework.', profileContext),
       messages: [

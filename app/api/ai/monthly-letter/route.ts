@@ -1,4 +1,4 @@
-export const maxDuration = 60;
+export const maxDuration = 300; // lettera su Fable 5: serve margine oltre i 60s
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';

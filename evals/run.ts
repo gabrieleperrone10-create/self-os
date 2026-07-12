@@ -12,7 +12,7 @@ import './env'; // PRIMA di tutto: il client Anthropic legge la chiave a import-
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { anthropic, AI_MODEL } from '@/lib/anthropic/client';
+import { anthropic, AI_MODEL, NO_THINKING } from '@/lib/anthropic/client';
 import { MIRROR_PROMPT } from '@/lib/anthropic/prompts/mirror';
 import { DAILY_INSIGHT_PROMPT } from '@/lib/anthropic/prompts/daily-insight';
 import { SCAN_ANALYSIS_PROMPT } from '@/lib/anthropic/prompts/scan-analysis';
@@ -33,6 +33,7 @@ interface EvalResult {
 async function generate(prompt: string, maxTokens: number): Promise<string> {
   const message = await anthropic.messages.create({
     model: AI_MODEL,
+    thinking: NO_THINKING, // come in produzione
     max_tokens: maxTokens,
     messages: [{ role: 'user', content: prompt }],
   });

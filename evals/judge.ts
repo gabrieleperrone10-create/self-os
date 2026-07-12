@@ -1,7 +1,7 @@
 // LLM-judge: valuta l'output di un prompt SELF OS contro rubriche fisse
 // + criteri specifici del caso. Restituisce punteggi 1-10 e verdetto.
 
-import { anthropic, AI_MODEL } from '@/lib/anthropic/client';
+import { anthropic, AI_MODEL, NO_THINKING, firstText } from '@/lib/anthropic/client';
 import { parseAIJson } from '@/lib/anthropic/parsers';
 import { z } from 'zod';
 
@@ -62,14 +62,12 @@ Rispondi SOLO con JSON valido:
 
   const message = await anthropic.messages.create({
     model: AI_MODEL,
+    thinking: NO_THINKING,
     max_tokens: 800,
     messages: [{ role: 'user', content: judgePrompt }],
   });
 
-  const text = message.content[0];
-  if (text.type !== 'text') throw new Error('Risposta judge non valida');
-
-  const result = parseAIJson(text.text, judgeResultSchema, `judge:${promptName}`);
+  const result = parseAIJson(firstText(message), judgeResultSchema, `judge:${promptName}`);
   const s = result.scores;
   const avg = (s.specificita + s.chirurgicita + s.aderenza_regole + s.non_genericita) / 4;
 

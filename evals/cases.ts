@@ -5,6 +5,7 @@
 import type { Checkin, Decision } from '@/types';
 import type { MirrorAnswers } from '@/lib/anthropic/prompts/mirror';
 import type { ScanAnswers } from '@/types/scan';
+import type { StatProgramInput } from '@/lib/anthropic/prompts/stat-program';
 
 let idCounter = 0;
 const uid = () => `eval-${++idCounter}`;
@@ -208,6 +209,124 @@ export const scanCases: ScanCase[] = [
       "La lettera deve usare le parole esatte: 'in attesa', 'muore al 70%', 'momento perfetto'",
       "Il loop primario deve catturare la struttura: partenza forte → distrazione nuova → abbandono al 70%",
       "NOTA: il campo identity_target.first_action è BY DESIGN un'azione concreta — non considerarlo violazione della regola niente-consigli",
+      'JSON valido conforme allo schema (verificato automaticamente)',
+    ],
+  },
+];
+
+// ============ STAT PROGRAM ============
+// Il vincolo che questi casi verificano non è di tono ma di architettura: la
+// formula la sceglie il motore, l'AI la istanzia. Un output che cambia
+// condizione, aggiunge passi o ne riordina la sequenza è un fallimento di
+// prodotto anche se il testo è ben scritto.
+
+
+export interface StatProgramCase {
+  name: string;
+  input: StatProgramInput;
+  criteria: string[];
+}
+
+export const statProgramCases: StatProgramCase[] = [
+  {
+    // Il caso rappresenta ciò che la route produce davvero su una famiglia: quando
+    // la diagnosi nomina il livello che cede, il programma si scrive su QUELLO
+    // (Carico medio), non sul risultato — altrimenti il passo 1 di Emergency
+    // ("aumenta il volume") contraddirebbe la diagnosi "il lavoro c'è".
+    name: 'metodo-fermo-programma-sul-livello-che-cede',
+    input: {
+      label: 'Carico medio',
+      unit: 'kg',
+      definition: 'Media del carico sui tre fondamentali della settimana.',
+      direction: 'up',
+      mode: 'grow',
+      target: null,
+      periodLabel: '17–23 ago',
+      series: [
+        { period: '13–19 lug', value: 100 },
+        { period: '20–26 lug', value: 100 },
+        { period: '27 lug – 2 ago', value: 100 },
+        { period: '3–9 ago', value: 100 },
+        { period: '10–16 ago', value: 100 },
+        { period: '17–23 ago', value: 100 },
+      ],
+      condition: 'emergency',
+      conditionLabel: 'Emergency',
+      previous: 100,
+      current: 100,
+      deltaText: '0% · invariato',
+      trendLabel: 'Emergency',
+      trendText: '0%/periodo su 13 periodi · confidenza alta (p=1.00)',
+      divergence: 'confirm',
+      formulaName: 'Emergency',
+      formulaSteps: [
+        'Aumenta il volume dell’azione base — fanne di più, prima di cambiare metodo.',
+        'Cambia qualcosa nel modo in cui la fai, se il volume da solo non basta.',
+        'Taglia il superfluo che ti distrae da questa priorità questa settimana.',
+        'Ripristina la disciplina minima non negoziabile su questa attività.',
+      ],
+      diagnosis: 'method_failure',
+      diagnosisTitle: 'Il lavoro c’è, il metodo no',
+      parentLabel: 'Massa grassa',
+      children: [
+        { label: 'Allenamenti', role: 'quantity', condition: 'normal', inOrder: true, currentValue: 12, unit: null },
+        { label: 'Carico medio', role: 'quality', condition: 'emergency', inOrder: false, currentValue: 100, unit: 'kg' },
+        { label: 'Aderenza nutrizionale', role: 'support', condition: 'normal', inOrder: true, currentValue: 85, unit: '%' },
+      ],
+    },
+    criteria: [
+      'DEVE contenere esattamente 4 passi, nello stesso ordine dei 4 passi generici forniti',
+      'DEVE citare i numeri veri: il carico fermo a 100 kg, e il fatto che gli allenamenti (12) sono in ordine',
+      'Il passo 1 ("aumenta il volume dell\'azione base") va istanziato sul CARICO, che è la stat in questione — NON sul numero di allenamenti, che è già a posto',
+      'Non deve dire di allenarsi di più: i dati mostrano che la quantità non è il problema',
+      'Non deve cambiare la condizione assegnata (Emergency) né proporne un\'altra',
+      'Nessun tono motivazionale, nessuna congratulazione, nessuna promessa di risultato',
+      'JSON valido conforme allo schema (verificato automaticamente)',
+    ],
+  },
+  {
+    name: 'normal-non-cambiare-niente',
+    input: {
+      label: 'Ore di deep work',
+      unit: 'ore',
+      definition: 'Blocchi da almeno 90 minuti, senza notifiche, su un solo progetto.',
+      direction: 'up',
+      mode: 'grow',
+      target: null,
+      periodLabel: '17–23 ago',
+      series: [
+        { period: '13–19 lug', value: 9 },
+        { period: '20–26 lug', value: 10 },
+        { period: '27 lug – 2 ago', value: 10 },
+        { period: '3–9 ago', value: 11 },
+        { period: '10–16 ago', value: 11 },
+        { period: '17–23 ago', value: 12 },
+      ],
+      condition: 'normal',
+      conditionLabel: 'Normal',
+      previous: 11,
+      current: 12,
+      deltaText: '+9.1% · migliora',
+      trendLabel: 'Normal',
+      trendText: '+4.2%/periodo su 6 periodi · confidenza media (p=0.03)',
+      divergence: 'confirm',
+      formulaName: 'Normal',
+      formulaSteps: [
+        'Non cambiare niente: quello che stai facendo sta funzionando.',
+        'Se migliora, scopri cosa l’ha migliorata e continua a farlo — senza abbandonare il resto.',
+        'Se peggiora anche di poco, scopri subito perché e rimedia prima che diventi un calo.',
+      ],
+      diagnosis: null,
+      diagnosisTitle: null,
+      children: [],
+      parentLabel: null,
+    },
+    criteria: [
+      'DEVE contenere esattamente 3 passi, nello stesso ordine dei 3 passi generici forniti',
+      'Il passo 1 deve dire di NON cambiare niente — è il punto della condizione Normal, non un riempitivo',
+      'Non deve suggerire di aumentare le ore, ottimizzare o aggiungere nuove pratiche: sarebbe la formula sbagliata',
+      'Deve citare i numeri veri (11 → 12 ore) e la definizione operativa (blocchi da 90 minuti senza notifiche)',
+      'Nessun consiglio mascherato da domanda, nessun tono motivazionale',
       'JSON valido conforme allo schema (verificato automaticamente)',
     ],
   },

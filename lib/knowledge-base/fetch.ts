@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 
 export type KBCategory =
   | 'archetype' | 'framework' | 'process' | 'wheel_of_life' | 'glossary'
-  | 'mechanism' | 'safety' | 'epistemic' | 'biometrics_framework';
+  | 'mechanism' | 'safety' | 'epistemic' | 'biometrics_framework' | 'stat_conditions';
 
 interface KBEntry {
   title: string;
@@ -82,4 +82,12 @@ export async function fetchFullContext(): Promise<string> {
  */
 export async function fetchBiometricsContext(): Promise<string> {
   return fetchKBContext(['biometrics_framework', 'mechanism', 'epistemic', 'safety']);
+}
+
+/**
+ * Contesto del modulo STAT: le condizioni con le loro formule, la regola
+ * cardinale, il registro. Per la route stat-program.
+ */
+export async function fetchStatContext(): Promise<string> {
+  return fetchKBContext(['stat_conditions', 'epistemic']);
 }

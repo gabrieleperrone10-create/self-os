@@ -1,7 +1,8 @@
 // Eval harness dei prompt SELF OS.
 //
-//   npm run evals             → tutti i prompt
-//   npm run evals -- mirror   → solo un prompt (mirror | daily-insight | scan)
+//   npm run evals                  → tutti i prompt
+//   npm run evals -- mirror        → solo un prompt
+//   (mirror | daily-insight | scan | stat-program)
 //
 // Per ogni caso: costruisce il prompt con il VERO builder di produzione,
 // chiama Claude, valida la struttura con i VERI schemi Zod di produzione,
@@ -16,9 +17,10 @@ import { anthropic, AI_MODEL, NO_THINKING } from '@/lib/anthropic/client';
 import { MIRROR_PROMPT } from '@/lib/anthropic/prompts/mirror';
 import { DAILY_INSIGHT_PROMPT } from '@/lib/anthropic/prompts/daily-insight';
 import { SCAN_ANALYSIS_PROMPT } from '@/lib/anthropic/prompts/scan-analysis';
+import { STAT_PROGRAM_PROMPT } from '@/lib/anthropic/prompts/stat-program';
 import { parseAIJson } from '@/lib/anthropic/parsers';
-import { mirrorAnalysisSchema, scanReportSchema } from '@/lib/anthropic/schemas';
-import { mirrorCases, dailyInsightCases, scanCases } from './cases';
+import { mirrorAnalysisSchema, scanReportSchema, statProgramSchema } from '@/lib/anthropic/schemas';
+import { mirrorCases, dailyInsightCases, scanCases, statProgramCases } from './cases';
 import { judge, type JudgeResult } from './judge';
 
 interface EvalResult {
@@ -112,14 +114,48 @@ async function runScan(): Promise<EvalResult[]> {
   return results;
 }
 
+async function runStatProgram(): Promise<EvalResult[]> {
+  const results: EvalResult[] = [];
+  for (const c of statProgramCases) {
+    process.stdout.write(`  stat-program/${c.name} ... `);
+    try {
+      const output = await generate(STAT_PROGRAM_PROMPT(c.input), 1200);
+      let structuralValid = true;
+      let stepCountOk = true;
+      try {
+        const parsed = parseAIJson(output, statProgramSchema, 'eval-stat-program');
+        // La sequenza È la formula: un numero di passi diverso da quello della
+        // formula assegnata è un fallimento strutturale, non stilistico.
+        stepCountOk = parsed.passi.length === c.input.formulaSteps.length;
+      } catch {
+        structuralValid = false;
+      }
+      const j = await judge(
+        'stat-program',
+        JSON.stringify(c.input, null, 2),
+        output,
+        c.criteria,
+      );
+      const valid = structuralValid && stepCountOk;
+      results.push({ prompt: 'stat-program', case: c.name, structuralValid: valid, judge: j, output });
+      console.log(`${j.pass && valid ? 'PASS' : 'FAIL'} (avg ${j.avg.toFixed(1)}${structuralValid ? '' : ', SCHEMA INVALIDO'}${stepCountOk ? '' : ', NUMERO PASSI ERRATO'})`);
+    } catch (err) {
+      results.push({ prompt: 'stat-program', case: c.name, structuralValid: null, judge: null, output: '', error: String(err) });
+      console.log(`ERROR: ${err}`);
+    }
+  }
+  return results;
+}
+
 async function main() {
-  const filter = process.argv[2]; // mirror | daily-insight | scan | undefined
+  const filter = process.argv[2]; // mirror | daily-insight | scan | stat-program | undefined
   console.log(`\nSELF OS — Eval harness (modello: ${AI_MODEL})\n`);
 
   const all: EvalResult[] = [];
   if (!filter || filter === 'mirror') all.push(...await runMirror());
   if (!filter || filter === 'daily-insight') all.push(...await runDailyInsight());
   if (!filter || filter === 'scan') all.push(...await runScan());
+  if (!filter || filter === 'stat-program') all.push(...await runStatProgram());
 
   // Riepilogo
   const passed = all.filter(r => r.judge?.pass && r.structuralValid !== false).length;

@@ -10,7 +10,8 @@
     "research:export": "tsx research/scripts/export.ts",
     "research:agent": "tsx research/scripts/agent.ts",
     "research": "npm run research:export && npm run research:agent",
-    "evals": "tsx evals/run.ts"
+    "evals": "tsx evals/run.ts",
+    "test:stats": "tsx --test lib/stats/*.test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

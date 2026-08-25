@@ -53,10 +53,11 @@ successo**: la voce `/lab` (icona `FlaskConical`) era mescolata con `/segnali`
 (icona `Zap`) nello stesso diff.
 
 **Stato attuale (verificare se ancora vero prima di assumere):**
-- `mainNav`: Dashboard, Check-in, Identity Map, Distanza, Mirror, Lab,
-  Segnali, Lettere — più "Scan iniziale" sempre visibile, "Clienti"
-  (`/coach`) per ruolo `coach`/`admin`, "Admin" (`/admin`, icona `Shield`)
-  solo per `admin` (aggiunto sessione 2026-06-10 sera, vedi §2.9)
+- `mainNav`: Dashboard, Check-in, Identity Map, Distanza, Corpo, Mirror, Lab,
+  **Stat** (aggiunto 2026-08-25, icona `Gauge`, vedi §2.11), Segnali, Lettere
+  — più "Scan iniziale" sempre visibile, "Clienti" (`/coach`) per ruolo
+  `coach`/`admin`, "Admin" (`/admin`, icona `Shield`) solo per `admin`
+  (aggiunto sessione 2026-06-10 sera, vedi §2.9)
 
 **Gap trovato e fixato 2026-06-11:** quando è stata aggiunta la voce
 "Clienti" per `role === 'admin'`, il gate di accesso in
@@ -78,6 +79,76 @@ usa `/admin/users/[id]` per il dettaglio).
 
 **Regola:** prima di aggiungere una voce, leggi l'intero file — non fare diff
 parziali al buio.
+
+### 2.11 Modulo STAT (`lib/stats/`, `app/(app)/stat/**`, `app/api/stats/**`) — sessione 2026-08-25
+
+**È:** statistica applicata all'identità (piano completo in
+`.agents/plan-stat-module.md`). F0 (motore) + F1 (schema) + F2 (UI) fatte,
+solo stat manuali — collector automatici rinviati a F6.
+
+**Confine di responsabilità, da rispettare se si tocca questo modulo:**
+- `lib/stats/math.ts` + `engine.ts` — **puri**, zero import di Supabase o
+  Next.js. Se serve una nuova regola di classificazione va qui, con un test
+  in `engine.test.ts` (`npm run test:stats`).
+- `lib/stats/data.ts` — l'unico file che fa da ponte tra il motore e
+  Supabase. Nessuna tabella di cache (`stat_readings` non esiste): ricalcola
+  a ogni richiesta da `stat_entries`. Se in futuro il volume di dati rende
+  necessaria una cache, va introdotta qui, non nel motore.
+- `lib/stats/copy.ts` + `formulas.ts` — testo delle tre sezioni della scheda
+  di lettura (CONDIZIONE/TENDENZA/COSA FARE ORA), deterministico, senza AI.
+  È anche il fallback per quando la route AI della F3 (non ancora costruita)
+  non risponde — non va rimosso quando si aggiunge l'AI, va usato come rete.
+- **Trovato scrivendo l'engine (non nel piano originale):** Theil–Sen è
+  robusto per costruzione, quindi un crollo netto seguito da un plateau
+  basso (metà serie alta, metà bassa) ha pendenza mediana vicina a zero e
+  Mann–Kendall non lo legge come monotono — il motore lo classificherebbe
+  "Normal" senza un controllo dedicato. Fix: `heldInLowRange` in
+  `engine.ts`, simmetrico di `heldInHighRange` (usato per il Power) ma sul
+  lato basso, con soglia più permissiva (8 periodi contro 12, disuguaglianza
+  stretta per non scattare su una serie perfettamente piatta). Prima di
+  toccare le soglie di classificazione, rileggi i test golden in
+  `engine.test.ts` — in particolare "cambio di regime" e "un plateau basso
+  permanente".
+- **Famiglie di stat (F7, 2026-08-26)**: `lib/stats/family.ts` + `family-copy.ts`.
+  Una stat può dichiarare un genitore (il VFP) e un `role`
+  (`quantity`/`quality`/`support`); la diagnosi scende la gerarchia per trovare
+  quale livello cede. **L'ordine dei controlli è logica, non stile**: la quantità
+  viene prima perché su lavoro non fatto non si valuta il metodo — non invertirlo.
+  I figli si aggregano al periodo del VFP secondo `aggregation`
+  (`sum`/`mean`/`last`): senza, un peso settimanale su base mensile varrebbe 4×.
+- **Trovato provando il caso reale (massa grassa / carichi)**: le bande relative
+  del motore (piatto ±5%) erano tarate su conteggi e valori economici. Una misura
+  fisiologica si muove del 2–3% a periodo, quindi **ogni progresso reale finiva
+  dentro "piatto" → Emergency**. Fix: `naturalStepOf()` + `calibration()` in
+  `engine.ts` — le bande si scalano sulla variazione tipica della stat stessa.
+  ⚠ La calibrazione **stringe soltanto** (`CALIBRATION_MAX_K = 1`): il primo
+  tentativo con clamp simmetrico introduceva il difetto opposto — su una stat che
+  cresce sempre del 13%, un salto del +47% smetteva di essere Affluence. Non
+  rialzare quel tetto senza rileggere i test di calibrazione.
+- **Grafico (`app/(app)/stat/[key]/chart.tsx`) — tre difetti trovati provandolo
+  dal vivo, tutti da non reintrodurre:**
+  1. L'asse Y **non deve partire da zero** (`niceDomain()` inquadra i dati con un
+     margine). Con il default di Recharts una massa grassa tra 18,0 e 18,5 su un
+     asse 0–20 diventa una riga piatta invisibile in cima: è il gemello visivo del
+     bug di calibrazione del motore, stessa assunzione sbagliata. Il target, se
+     presente, deve restare dentro l'inquadratura.
+  2. `isAnimationActive={false}` sulla `<Line>` è **necessario**, non stilistico:
+     la render-prop dei punti rimonta la Line a ogni selezione e l'animazione di
+     disegno resta bloccata a `stroke-dasharray: 0` → la linea non compare mai.
+  3. Margine sinistro a 0 (non `-20` come in biometrics): con etichette tipo
+     "18.45" il margine negativo le taglia.
+- **Copy di famiglia — mai innestare le formule generiche.** `formulas.ts` è
+  scritto per stat di produzione: su una diagnosi `method_failure` ("il lavoro c'è,
+  il metodo no") il primo passo di Emergency è "aumenta il volume dell'azione base",
+  che **contraddice la diagnosi**. Il pannello dice su quale livello intervenire e
+  rimanda alla pagina del figlio, unica fonte della formula. C'è un test di
+  regressione in `family-copy.test.ts` che fallisce se il testo torna a dirlo.
+- Migrazioni `017_stats.sql` e `018_stat_families.sql` — ⚠ **applicate al DB live
+  il 2026-08-26**. 016 resta pendente (vedi §4 e memoria). Prossimo numero
+  libero: **019**.
+- Nav: voce `/stat` aggiunta a `mainNav` in `sidebar.tsx` (§2.2), **non**
+  aggiunta a `mobileBottomNav` — stesso trattamento di `/biometrics`,
+  `/distanza`, `/letters` (raggiungibili solo da desktop o overlay mobile).
 
 ### 2.3 `lib/anthropic/client.ts`
 **È:** il client Anthropic condiviso (wrapper su `@anthropic-ai/sdk`).
@@ -344,6 +415,8 @@ raggiungibili via URL diretto — mostrano sempre i dati dell'admin reale), `/sc
 | `weekly_reports`    |  2 | report settimanale AI |
 | `monthly_letters`   |  2 | lettera mensile AI |
 | `knowledge_base`    |  1 | fetch condiviso, vedi 2.4 |
+| `stat_definitions`  |  1 | feature `stat` (2026-08-25, vedi §2.11) |
+| `stat_entries`      |  1 | feature `stat` (2026-08-25, vedi §2.11) |
 
 **Per ricontrollare velocemente:**
 ```bash
@@ -398,6 +471,11 @@ su `experiments`/`experiment_entries`/`weekly_reports`/`identity_profiles`
 per "Entra come utente" (vedi §2.10). ⚠ **da applicare al DB live via SQL
 Editor**, insieme a 008/009 ancora pendenti (vedi memoria). Prossimo numero
 libero: **013**.
+
+**2026-08-25:** aggiunta `017_stats.sql` — `stat_definitions` + `stat_entries`
+per il modulo STAT (§2.11), RLS `users_own_data` + `admin_reads_all_*`
+(`is_admin()`). ⚠ **da applicare al DB live via SQL Editor**, insieme a 016
+ancora pendente. Prossimo numero libero: **018**.
 
 ---
 

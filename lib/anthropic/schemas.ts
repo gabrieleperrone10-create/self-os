@@ -129,3 +129,21 @@ export const biometricsInsightSchema = z.looseObject({
   indicazione: z.string(),
   affidabilita: z.enum(['alta', 'media', 'bassa']),
 }) satisfies z.ZodType<BiometricsInsight>;
+
+/**
+ * Programma del periodo per una stat (modulo STAT).
+ * `passi` deve avere la stessa lunghezza e lo stesso ordine dei passi generici
+ * della formula scelta dal motore — la verifica di lunghezza è nel generatore,
+ * qui si valida solo la forma.
+ */
+export type StatProgram = {
+  lettura: string;
+  passi: string[];
+  nota?: string;
+};
+
+export const statProgramSchema = z.looseObject({
+  lettura: z.string(),
+  passi: z.array(z.string()),
+  nota: opt(z.string()),
+}) satisfies z.ZodType<StatProgram>;

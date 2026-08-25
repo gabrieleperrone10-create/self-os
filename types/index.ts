@@ -9,6 +9,12 @@ export type CoachClientStatus = 'active' | 'paused' | 'ended';
 export type ExperimentStatus = 'active' | 'paused' | 'completed' | 'stuck';
 export type ExperimentResolution = 'integrated' | 'behavioral_shift' | 'no_change';
 export type ExperimentResponse = 'acted_differently' | 'noticed_during' | 'noticed_after' | 'automatic';
+export type StatArea = 'corpo' | 'dieta' | 'lavoro' | 'relazioni' | 'mente' | 'soldi';
+export type StatDirection = 'up' | 'down';
+export type StatMode = 'grow' | 'maintain';
+export type StatPeriod = 'day' | 'week' | 'month';
+export type StatRole = 'quantity' | 'quality' | 'support';
+export type StatAggregation = 'sum' | 'mean' | 'last';
 
 export interface Signal {
   id: string;
@@ -209,4 +215,37 @@ export interface ExperimentGeneration {
     ai_rationale: string;
     duration_days: number;
   };
+}
+
+export interface StatDefinition {
+  id: string;
+  user_id: string;
+  key: string;
+  label: string;
+  area: StatArea;
+  unit: string | null;
+  definition: string | null;
+  direction: StatDirection;
+  mode: StatMode;
+  period: StatPeriod;
+  target: number | null;
+  /** Il VFP di cui questa stat è un figlio. null = stat a sé, o essa stessa un VFP. */
+  parent_id: string | null;
+  /** Quale livello di produzione presidia. Presente solo sui figli. */
+  role: StatRole | null;
+  /** Come si aggregano i valori salendo al periodo del VFP. */
+  aggregation: StatAggregation;
+  active: boolean;
+  created_at: string;
+}
+
+export interface StatEntry {
+  id: string;
+  stat_id: string;
+  user_id: string;
+  period_start: string;
+  value: number;
+  estimated: boolean;
+  note: string | null;
+  created_at: string;
 }

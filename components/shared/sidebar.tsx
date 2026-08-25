@@ -22,6 +22,7 @@ import {
   X,
   Shield,
   Activity,
+  Gauge,
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 import { useViewAs } from './view-as-context';
@@ -34,6 +35,7 @@ const mainNav = [
   { href: '/biometrics',  label: 'Corpo',         icon: Activity },
   { href: '/mirror',       label: 'Mirror',        icon: GitFork },
   { href: '/lab',          label: 'Lab',           icon: FlaskConical },
+  { href: '/stat',         label: 'Stat',          icon: Gauge },
   { href: '/segnali',      label: 'Segnali',       icon: Zap },
   { href: '/letters',      label: 'Lettere',       icon: BookOpen },
 ];
